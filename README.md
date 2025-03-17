@@ -32,7 +32,7 @@ writeMesh currently only woks for 2D mesh. I will extend it to 3D mesh later thi
 
 
 
-## Function and input arguments
+## Functions and input arguments
 
 **Functions:**
 
