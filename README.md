@@ -25,10 +25,10 @@ writeMesh currently only woks for 2D mesh. I will extend it to 3D mesh later thi
 
 **Examples:**
 
-- [demo01](https://mjx888.github.io/im2mesh_demo_html/demo01.html) - Triangular mesh with single phase
-- [demo02](https://mjx888.github.io/im2mesh_demo_html/demo02.html) - Triangular mesh with multiple phases
-- [demo03](https://mjx888.github.io/im2mesh_demo_html/demo03.html) - Quadrilateral mesh
-- [demo04](https://mjx888.github.io/im2mesh_demo_html/demo04.html) - Mesh with quadratic elements
+- [demo01](https://mjx888.github.io/writeMesh/demo01.html) - Triangular mesh with single phase
+- [demo02](https://mjx888.github.io/writeMesh/demo02.html) - Triangular mesh with multiple phases
+- [demo03](https://mjx888.github.io/writeMesh/demo03.html) - Quadrilateral mesh
+- [demo04](https://mjx888.github.io/writeMesh/demo04.html) - Mesh with quadratic elements
 
 
 
