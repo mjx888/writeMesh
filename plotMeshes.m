@@ -20,8 +20,7 @@ function plotMeshes( vert, ele, tnum )
 %       tnum(j,1) = k; means the j-th element is belong to the k-th phase
 %
 %
-% Im2mesh is copyright (C) 2019-2025 by Jiexian Ma and is distributed under
-% the terms of the GNU General Public License (version 3).
+% copyright (C) 2019-2025 by Jiexian Ma
 % 
 % Project website: https://github.com/mjx888/im2mesh
 %
