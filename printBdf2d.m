@@ -1,7 +1,7 @@
 function printBdf2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_name )
 % printBdf2d: write 2d finite element mesh (nodes and elements) to bdf 
 %           file (Nastran bulk data, compatible with COMSOL). 
-%           Use functions: getNodeEle
+%           Use functions: getNodeEle.m  fixOrdering.m
 %           
 %           Works for linear triangular and linear quadrilateral element.
 %           Not work for quadratic element.

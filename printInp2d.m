@@ -4,7 +4,7 @@ function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_na
 %           The exported inp file will have a model with one part, which 
 %           contains multiple sections. Each section corresponds to one 
 %           material phase in the mesh.
-%           Use functions: getNodeEle
+%           Use functions: getNodeEle.m  fixOrdering.m
 %
 %           Works for linear and quadratic element.
 %           Works for triangular and quadrilateral element.
