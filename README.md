@@ -34,13 +34,13 @@ After downloading writeMesh, I suggest you start with writeMesh manual in the fo
 
 **Examples:**
 
-- [demo01](https://mjx888.github.io/im2mesh_demo_html/demo01.html) - Demonstrate function `im2mesh`, which use MESH2D as mesh generator.
+- [demo01](https://mjx888.github.io/im2mesh_demo_html/demo01.html) - Triangular mesh with single phase
 
-- [demo02](https://mjx888.github.io/im2mesh_demo_html/demo02.html) - Demonstrate function `im2meshBuiltIn`, which use MATLAB built-in function `generateMesh` as mesh generator.
+- [demo02](https://mjx888.github.io/im2mesh_demo_html/demo02.html) - Triangular mesh with multiple phases
 
-- [demo03](https://mjx888.github.io/im2mesh_demo_html/demo03.html) - How to export mesh as `inp`, `bdf`, `msh`, and `node`/`ele` file
+- [demo03](https://mjx888.github.io/im2mesh_demo_html/demo03.html) - Quadrilateral mesh
 
-- [demo04](https://mjx888.github.io/im2mesh_demo_html/demo04.html) - What is inside function `im2mesh`.
+- [demo04](https://mjx888.github.io/im2mesh_demo_html/demo04.html) - Triangular mesh with isolated domain.
 
   
 
