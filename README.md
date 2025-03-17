@@ -2,7 +2,7 @@
 
 
 
-**writeMesh** is a MATLAB project for writing MATLAB finite element mesh to inp, bdf, and msh files. writeMesh is a sub-project of [Im2mesh package](https://github.com/mjx888/im2mesh). 
+**writeMesh** is a MATLAB project for writing MATLAB finite element mesh to inp, bdf, and msh files. writeMesh is a part of [Im2mesh package](https://github.com/mjx888/im2mesh). 
 
 writeMesh supports mesh with single or multiple phases. Note that phase is also known as part, domain, or physical surface. In finite element modeling of composite materials, each phase in the mesh represents a distinct material component.
 
@@ -31,7 +31,7 @@ After downloading writeMesh, I suggest you start with writeMesh manual in the fo
 - [demo01](https://mjx888.github.io/im2mesh_demo_html/demo01.html) - Triangular mesh with single phase
 - [demo02](https://mjx888.github.io/im2mesh_demo_html/demo02.html) - Triangular mesh with multiple phases
 - [demo03](https://mjx888.github.io/im2mesh_demo_html/demo03.html) - Quadrilateral mesh
-- [demo04](https://mjx888.github.io/im2mesh_demo_html/demo04.html) - Triangular mesh with isolated domain.
+- [demo04](https://mjx888.github.io/im2mesh_demo_html/demo04.html) - Mesh with quadratic elements
 
 ## Cite as
 
