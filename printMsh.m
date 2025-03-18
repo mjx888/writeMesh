@@ -53,7 +53,7 @@ function printMsh( vert, ele, tnum, conn, precision_nodecoor, path_file_name )
 %  finite element mesh based on 2D multi-phase image (2.1.5). Zenodo. 
 %  https://doi.org/10.5281/zenodo.14847059
 %
-% Copyright (C) 2019-2025 by Jiexian Ma
+% Copyright (C) 2019-2025 by Jiexian Ma, mjx0799@gmail.com
 % 
 % Project website: https://github.com/mjx888/im2mesh
 %

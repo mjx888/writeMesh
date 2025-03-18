@@ -16,7 +16,7 @@ function ele = fixOrdering( vert, ele )
 %         for that mesh element.
 %
 %
-% Copyright (C) 2019-2025 by Jiexian Ma
+% Copyright (C) 2019-2025 by Jiexian Ma, mjx0799@gmail.com
 % 
 % Project website: https://github.com/mjx888/im2mesh
 %

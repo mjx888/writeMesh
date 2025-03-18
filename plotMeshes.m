@@ -20,7 +20,7 @@ function plotMeshes( vert, ele, tnum )
 %       tnum(j,1) = k; means the j-th element is belong to the k-th phase
 %
 %
-% copyright (C) 2019-2025 by Jiexian Ma
+% copyright (C) 2019-2025 by Jiexian Ma, mjx0799@gmail.com
 % 
 % Project website: https://github.com/mjx888/im2mesh
 %
