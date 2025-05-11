@@ -5,7 +5,11 @@ function ele = fixOrdering( vert, ele )
 % Detail: Caculate area sign of an element. If negative, flip ordering of
 %         nodes in a element. Counterclockwise ordering produce positive 
 %         area. Clockwise ordering produce negative area.
+%
+% usage:
+%   ele = fixOrdering( vert, ele );
 % 
+% input:
 %   vert: Mesh nodes. It’s a Nn-by-2 matrix, where 
 %         Nn is the number of nodes in the mesh. Each row of vert 
 %         contains the x, y coordinates for that mesh node.
@@ -73,7 +77,7 @@ function area = quadarea(vert, ele)
         % Extract the coordinates of the 4 vertices
         x = vert(nodes, 1);
         y = vert(nodes, 2);
-
+        
         % Shoelace formula components
         sum1 = x(1)*y(2) + x(2)*y(3) + x(3)*y(4) + x(4)*y(1);
         sum2 = y(1)*x(2) + y(2)*x(3) + y(3)*x(4) + y(4)*x(1);
