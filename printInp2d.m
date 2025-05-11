@@ -1,24 +1,29 @@
-function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_name )
+function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
 % printInp2d: write 2d finite element mesh (nodes and elements) to inp 
-%           file (Abaqus). Test in software Abaqus. 
+%           file (Abaqus). Tested in software Abaqus. 
 %           The exported inp file will have a model with one part, which 
 %           contains multiple sections. Each section corresponds to one 
 %           material phase in the mesh.
-%           Use functions: getNodeEle.m  fixOrdering.m
-%
+%           
 %           Works for linear and quadratic element.
 %           Works for triangular and quadrilateral element.
+%           Function printInp2d will automatically export node set.
+%           opt.user_nodeSet is used to defined customized node set.
+%
+%           Use functions: getNodeEle.m  fixOrdering.m  
+%                          getBCNode.m   getInterf.m
 %
 % usage:
 %   printInp2d( vert, ele );
-%   printInp2d( vert, ele, [], [], [], path_file_name );
+%   printInp2d( vert, ele, [], [], [], file_name );
 %   printInp2d( vert, ele, tnum );
-%   printInp2d( vert, ele, tnum, [], precision_nodecoor );
-%   printInp2d( vert, ele, tnum, ele_type, precision_nodecoor );
-%   printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_name );
+%   printInp2d( vert, ele, tnum, [], precision );
+%   printInp2d( vert, ele, tnum, ele_type, precision );
+%   printInp2d( vert, ele, tnum, ele_type, precision, file_name );
+%   printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt );
 %
 % input:
-%   ele_type, precision_nodecoor, path_file_name are optional.
+%   tnum, ele_type, precision, file_name, opt are optional.
 %
 %   vert: Mesh nodes. It’s a Nn-by-2 matrix, where 
 %         Nn is the number of nodes in the mesh. Each row of vert 
@@ -27,7 +32,7 @@ function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_na
 %   ele: Mesh elements. 
 %        For linear triangular elements, it s a Ne-by-3 matrix. 
 %        For linear quadrilateral elements, it s a Ne-by-4 matrix
-%         
+
 %        Ne is the number of elements in the mesh. Each row in ele 
 %        contains the indices of the nodes for that mesh element.
 %   
@@ -36,16 +41,32 @@ function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_na
 %         tnum(j,1) = k; means the j-th element belongs to the k-th phase.
 %         When omitted, assign one phase.
 %     
-%   ele_type: element type in Abaqus
+%   ele_type: element type in Abaqus.
 %             When omitted, ele_typ will be determined based on the size of 
 %             variable ele.
 %
-%   precision_nodecoor: number of digits to the right of the decimal point 
-%                       when writing node coordinates.
-%                       When omitted, precision_nodecoor=8;
+%   precision: number of digits to the right of the decimal point 
+%              when writing node coordinates.
+%              When omitted, precision=8;
 %
-%   path_file_name: file name of inp file, such as 'aaa.inp', 'D:\aaa.inp'.
-%                   When omitted, path_file_name='test.inp';
+%   file_name: file name of inp file, such as 'aaa.inp', 'D:\aaa.inp'.
+%              When omitted, file_name='test.inp';
+%
+%   opt - a structure array. It is the extra options for printInp2d.
+%         It stores extra parameter settings for printInp2d.
+%
+%   opt.tf_printMaxMinNode - Boolean. Value: 0 or 1. Whether to print nodes
+%                            at max & min location as node set.
+%                            Default value: 1
+%
+%   opt.tf_printInterfNode - Boolean. Value: 0 or 1. Whether to print nodes
+%                            at the interface as node set.
+%                            Default value: 1
+%
+%   opt.user_nodeSet - User-defined node set. A nested cell array. 
+%                      Default value: {}
+%             Exampe:  opt.user_nodeSet{1} = { 'name1', [2 5 8] };
+%                      opt.user_nodeSet{2} = { 'name2', [36 23 56 80] };
 %
 %
 % This is sub-project of Im2mesh package. If you use this function, please
@@ -57,6 +78,7 @@ function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_na
 % Copyright (C) 2019-2025 by Jiexian Ma, mjx0799@gmail.com
 % 
 % Project website: https://github.com/mjx888/im2mesh
+%                  https://github.com/mjx888/writeMesh
 %
 
 
@@ -69,6 +91,8 @@ function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_na
     % Element
     %
     % Section
+    %
+    % Node set
     %
     % ---------------------------------------------------------------------
 
@@ -89,12 +113,20 @@ function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_na
     end
     
     if nargin < 5
-        precision_nodecoor = [];
+        precision = [];
     end
     
     if nargin < 6
-        path_file_name = [];
+        file_name = [];
     end
+
+    if nargin < 7
+        opt = [];
+    end
+
+    % ---------------------------------------------------------------------
+    % verify field names and set values for opt
+    opt = setOption( opt );
 
     % ---------------------------------------------------------------------
     % check input size
@@ -129,28 +161,28 @@ function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_na
         end
     end
     
-    if isempty(precision_nodecoor)
-        precision_nodecoor = 8;
+    if isempty(precision)
+        precision = 8;
     end
 
-    if isempty(path_file_name)
+    if isempty(file_name)
         % write to current folder
-        path_file_name = 'test.inp';
+        file_name = 'test.inp';
     end
 
     % ---------------------------------------------------------------------
     % check input type
 
-    % Validate that 'precision_nodecoor' is a positive integer
-    a = precision_nodecoor;
+    % Validate that 'precision' is a positive integer
+    a = precision;
     if ~isnumeric(a) || ~isscalar(a) || a <= 0 || mod(a, 1) ~= 0
-        error('Input "precision_nodecoor" must be a positive integer.');
+        error('Input "precision" must be a positive integer.');
     end
 
-    % Validate that 'path_file_name' is a string
-    b = path_file_name;
+    % Validate that 'file_name' is a string
+    b = file_name;
     if ~(ischar(b) || isstring(b))
-        error('Input "path_file_name" must be a string.');
+        error('Input "file_name" must be a string.');
     end
 
     % Validate that 'ele_type' is a string
@@ -169,21 +201,16 @@ function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_na
     % Add node numbering and element numbering, and organize elements into 
     % cell array. eleC{i} represent elements in the i-th phase.
     
-    [ nodecoor, ~, eleC ] = getNodeEle( vert, ele, tnum );
+    [ nodecoor, nodecoorC, eleC ] = getNodeEle( vert, ele, tnum );
     
-    % ---------------------------------------------------------------------
-    % convert number 1 2 3 to character A B C
-    num_sect = length( eleC );
-    sect_ascii = 65: ( 65 + num_sect - 1);
-    % section character
-    sect_char = char( sect_ascii );     % 'ABCD...'
+    num_phase = length( eleC );
     
     % ---------------------------------------------------------------------
     % format of number
 
     % format_node_coor
     % '%.(precision)f'
-    fmNodeCo = [ '%.', num2str( precision_nodecoor ), 'f' ];    
+    fmNodeCo = [ '%.', num2str( precision ), 'f' ];    
     
     fmNodeNum = '%d';     % format_node_num
     fmEleNum = '%d';      % format_ele_num
@@ -191,7 +218,7 @@ function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_na
     % ---------------------------------------------------------------------
     % start writing to file
     % ---------------------------------------------------------------------
-	fid=fopen(path_file_name,'wW');
+	fid=fopen(file_name,'wW');
     % ---------------------------------------------------------------------
 	% Heading
     fprintf( fid, [...
@@ -222,12 +249,12 @@ function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_na
     % ---------------------------------------------------------------------
     % Element
     
-    for i = 1: num_sect
+    for i = 1: num_phase
         % example:
         % *Element, type=CPS3, elset=Set-A
         fprintf( fid, [...
             '*Element, type=%s, elset=Set-%c'  '\n'...
-            ], ele_type, sect_char(i) );
+            ], ele_type, num2char(i) );
         
         % example:
         % 3,173,400,475     % linear tria element
@@ -236,10 +263,12 @@ function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_na
         printEle( fid, eleC{i}, fmEleNum, fmNodeNum );
     end
     
+    fprintf( fid, '%s\n', '**' );
+
     % ---------------------------------------------------------------------
     % Section
 
-    for i = 1: num_sect
+    for i = 1: num_phase
         % example:
         % ** Section: Section-A
         % *Solid Section, elset=Set-A, material=Material-A
@@ -250,12 +279,37 @@ function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_na
             '*Solid Section, elset=Set-%c, material=Material-%c'  '\n'...
             ','                                 '\n'...
             ], ...
-            sect_char(i), ...
-            sect_char(i), sect_char(i) );
+            num2char(i), ...
+            num2char(i), num2char(i) );
     end
     
-	fprintf( fid, '**' );
+    fprintf( fid, '%s\n', '**' );
     
+    % ---------------------------------------------------------------------
+    % print node set
+
+    % node set at max & min location
+    if opt.tf_printMaxMinNode
+        printNodeSetMaxMin( fid, nodecoor, nodecoorC );
+    end
+    
+    % node set at the interface
+    if opt.tf_printInterfNode
+        printNodeSetInterface( fid, nodecoorC );
+    end
+    
+    % print user-defined node set
+    if ~isempty( opt.user_nodeSet )
+        printUserNodeSet( fid, opt.user_nodeSet );
+    end
+
+    % ---------------------------------------------------------------------
+    % u can use node set to define boundary condition
+    % example:
+    % ** Name: BC-FixY Type: Displacement/Rotation
+    % *Boundary
+    % Set-A-Ymin, 2, 2
+
     % ---------------------------------------------------------------------
     fclose(fid);
 	
@@ -263,7 +317,53 @@ function printInp2d( vert, ele, tnum, ele_type, precision_nodecoor, path_file_na
     % ---------------------------------------------------------------------
 end
 
+
+function new_opt = setOption( opt )
+% setOption: verify field names in opt and set values in new_opt according
+% to opt
+
+    % initialize new_opt with default field names & value 
+    new_opt.tf_printMaxMinNode = true;
+    new_opt.tf_printInterfNode = true;
+    new_opt.user_nodeSet = {};
+    
+    if isempty(opt)
+        return
+    end
+
+    if ~isstruct(opt)
+        error("opt is not a structure array. Not valid input.")
+    end
+
+    % get the field names of opt
+    nameC = fieldnames(opt);
+
+    % verify field names in opt and set values in new_opt
+    % compare the field name of opt with new_opt using for loop
+    % if a field name of opt exist in new_opt, assign the that field value 
+    % in opt to new_opt
+    % if a field name of opt not exist in new_opt, show error
+
+    for i = 1: length(nameC)
+        if isfield( new_opt, nameC{i} )
+            value = getfield( opt, nameC{i} );
+            new_opt = setfield( new_opt, nameC{i}, value );
+        else
+            error("Field name %s in opt is not correct.", nameC{i});
+        end
+    end
+
+end
+
+
+function phase_char = num2char( k )
+% num2char: convert number 1 2 3 to character A B C
+
+    phase_char = char( k-1+65 );     % 'ABCD...'
+end
+
 function printEle( fid, ele, format_ele_num, format_node_num )
+% printEle: print elements
 % work for linear element and quadratic element
 
     num_column = size( ele, 2 );
@@ -282,39 +382,182 @@ function printEle( fid, ele, format_ele_num, format_node_num )
         );
 end
 
-% % old version
-% function printEle( fid, ele, format_ele_num, format_node_num )
-% % work for linear element and quadratic element
-% 
-%     num_column = size( ele, 2 );
-% 
-%     switch num_column
-%         case 4
-%             % linear element
-%             % example:
-%             % 3,173,400,475
-%             fprintf( fid, ...
-%                 [   format_ele_num, ',', ...
-%                     repmat([format_node_num, ','], [1,2]), ...
-%                     format_node_num, '\n' ...
-%                 ], ...
-%                 ele' ...
-%                 );
-%             
-%         case 7
-%             % quadratic element
-%             % example:
-%             % 87,428,584,561,866,867,868
-%             fprintf( fid, ...
-%                 [   format_ele_num, ',', ...
-%                     repmat([format_node_num, ','], [1,5]), ...
-%                     format_node_num, '\n' ...
-%                 ], ...
-%                 ele' ...
-%                 );
-%             
-%         otherwise
-%             disp('unidentified data')
-%     end
-% 
-% end
+function printSet( fid, nodeSet )
+% printSet: print node set
+
+    for i=1:length(nodeSet)
+        if mod( i, 16 ) == 0 || i == length(nodeSet)
+            fprintf( fid, '%d\n', nodeSet(i) );
+        else
+            fprintf( fid, '%d, ', nodeSet(i) );
+        end
+    end
+end
+
+function printNodeSetMaxMin( fid, nodecoor, nodecoorC )
+% printNodeSetMaxMin: print node set at max min location
+
+    % ---------------------------------------------------------------------
+    % get node set
+
+    num_phase = length(nodecoorC);
+
+    [ xmin_node_cell, xmax_node_cell, ...
+      ymin_node_cell, ymax_node_cell ] = getBCNode( nodecoorC );
+    
+    [ xmin_node, xmax_node, ...
+      ymin_node, ymax_node ] = getBCNode( {nodecoor} );
+    xmin_node = xmin_node{1};
+    xmax_node = xmax_node{1};
+    ymin_node = ymin_node{1};
+    ymax_node = ymax_node{1};
+    
+    % ---------------------------------------------------------------------
+    % node set at xmin, xmax, ymin, ymax (globally)
+    % ---------------------------------------------------------------------
+    % xmin
+    if ~isempty( xmin_node )
+	    fprintf( fid, [...
+		    '*Nset, nset=Set-Xmin'   '\n'...
+		    ] );
+
+	    printSet( fid, xmin_node );
+    end
+
+    fprintf( fid, '%s\n', '**' );
+    % ---------------------------------------------------------------------
+    % xmax
+    if ~isempty( xmax_node )
+	    fprintf( fid, [...
+		    '*Nset, nset=Set-Xmax'   '\n'...
+		    ] );
+
+	    printSet( fid, xmax_node );
+    end
+    
+    fprintf( fid, '%s\n', '**' );
+    % ---------------------------------------------------------------------
+    % ymin
+    if ~isempty( ymin_node )
+	    fprintf( fid, [...
+		    '*Nset, nset=Set-Ymin'   '\n'...
+		    ] );
+
+	    printSet( fid, ymin_node );
+    end
+    
+    fprintf( fid, '%s\n', '**' );
+    % ---------------------------------------------------------------------
+    % ymax
+    if ~isempty( ymax_node )
+	    fprintf( fid, [...
+		    '*Nset, nset=Set-Ymax'   '\n'...
+		    ] );
+        
+	    printSet( fid, ymax_node );
+    end
+    
+    fprintf( fid, '%s\n', '**' );
+
+    % ---------------------------------------------------------------------
+    % node set at xmin, xmax, ymin, ymax for each phase
+    % ---------------------------------------------------------------------
+    % xmin
+    for i = 1: num_phase
+	    if ~isempty( xmin_node_cell{i} )
+		    fprintf( fid, [...
+			    '*Nset, nset=Set-Xmin-%c'   '\n'...
+			    ], num2char(i) );
+    
+		    printSet( fid, xmin_node_cell{i} );
+	    end
+    end
+
+    fprintf( fid, '%s\n', '**' );
+    % ---------------------------------------------------------------------
+    % xmax
+    for i = 1: num_phase
+	    if ~isempty( xmax_node_cell{i} )
+		    fprintf( fid, [...
+			    '*Nset, nset=Set-Xmax-%c'   '\n'...
+			    ], num2char(i) );
+    
+		    printSet( fid, xmax_node_cell{i} );
+	    end
+    end
+    
+    fprintf( fid, '%s\n', '**' );
+    % ---------------------------------------------------------------------
+    % ymin
+    for i = 1: num_phase
+	    if ~isempty( ymin_node_cell{i} )
+		    fprintf( fid, [...
+			    '*Nset, nset=Set-Ymin-%c'   '\n'...
+			    ], num2char(i) );
+    
+		    printSet( fid, ymin_node_cell{i} );
+	    end
+    end
+    
+    fprintf( fid, '%s\n', '**' );
+    % ---------------------------------------------------------------------
+    % ymax
+    for i = 1: num_phase
+	    if ~isempty( ymax_node_cell{i} )
+		    fprintf( fid, [...
+			    '*Nset, nset=Set-Ymax-%c'   '\n'...
+			    ], num2char(i) );
+    
+		    printSet( fid, ymax_node_cell{i} );
+	    end
+    end
+    
+    fprintf( fid, '%s\n', '**' );
+    % ---------------------------------------------------------------------
+end
+
+
+function printNodeSetInterface( fid, nodecoorC )
+% printNodeSetInterface: print node set at the interface
+
+    num_phase = length(nodecoorC);
+    interfnode_cell = getInterf( nodecoorC );
+
+    for i = 1: num_phase-1
+	    for j = i+1: num_phase
+		    if ~isempty( interfnode_cell{i,j} )
+			    % node at interface i,j
+			    fprintf( fid, [...
+				    '*Nset, nset=Set-Interf-%c%c' '\n'...
+				    ], num2char(i), num2char(j) );
+    
+			    printSet( fid, interfnode_cell{i,j} );
+		    end
+	    end
+    end
+    
+    fprintf( fid, '%s\n', '**' );
+end
+
+function printUserNodeSet( fid, nodeSet )
+% printUserNodeSet: print user-defined node set
+
+    num_set = length(nodeSet);
+    
+    for i = 1: num_set
+	    if ~isempty( nodeSet{i}{1} ) && ~isempty( nodeSet{i}{2} )
+		    fprintf( fid, [...
+			    '*Nset, nset=Set-%s'   '\n'...
+			    ], nodeSet{i}{1} );
+    
+		    printSet( fid, nodeSet{i}{2} );
+
+            fprintf( fid, '%s\n', '**' );
+	    end
+    end
+    
+end
+
+
+
+
