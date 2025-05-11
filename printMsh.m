@@ -1,4 +1,4 @@
-function printMsh( vert, ele, tnum, conn, precision_nodecoor, path_file_name )
+function printMsh( vert, ele, tnum, conn, precision, file_name )
 % printMsh: write 2d finite element mesh (nodes and elements) to msh file.
 %           msh is Gmsh mesh file format. MSH file format version: 4.1
 %           Test in software Gmsh 4.13.1
@@ -9,15 +9,15 @@ function printMsh( vert, ele, tnum, conn, precision_nodecoor, path_file_name )
 %
 % usage:
 %   printMsh( vert, ele );
-%   printMsh( vert, ele, [], [], [], path_file_name );
+%   printMsh( vert, ele, [], [], [], file_name );
 %   printMsh( vert, ele, tnum );
-%   printMsh( vert, ele, [], [], precision_nodecoor );
-%   printMsh( vert, ele, tnum, [], precision_nodecoor );
-%   printMsh( vert, ele, tnum, [], precision_nodecoor );
-%   printMsh( vert, ele, tnum, [], precision_nodecoor, path_file_name );
+%   printMsh( vert, ele, [], [], precision );
+%   printMsh( vert, ele, tnum, [], precision );
+%   printMsh( vert, ele, tnum, [], precision );
+%   printMsh( vert, ele, tnum, [], precision, file_name );
 %
 % input:
-%   tnum, conn, precision_nodecoor, path_file_name are optional.
+%   tnum, conn, precision, file_name are optional.
 %
 %   vert: Mesh nodes. It’s a Nn-by-2 matrix, where 
 %         Nn is the number of nodes in the mesh. Each row of vert 
@@ -39,12 +39,12 @@ function printMsh( vert, ele, tnum, conn, precision_nodecoor, path_file_name )
 %         empty array, function printMsh will do computation to obatin the 
 %         missing conn parameter.
 %
-%   precision_nodecoor: number of digits to the right of the decimal point 
-%                       when writing node coordinates.
-%                       When omitted, precision_nodecoor = 8;
+%   precision: number of digits to the right of the decimal point 
+%              when writing node coordinates.
+%              When omitted, precision = 8;
 %
-%   path_file_name: file name of msh file, such as 'aaa.msh', 'D:\aaa.msh'.
-%                   When omitted, path_file_name = 'test.msh';
+%   file_name: file name of msh file, such as 'aaa.msh', 'D:\aaa.msh'.
+%              When omitted, file_name = 'test.msh';
 %
 %
 % This is sub-project of Im2mesh package. If you use this function, please
@@ -56,6 +56,7 @@ function printMsh( vert, ele, tnum, conn, precision_nodecoor, path_file_name )
 % Copyright (C) 2019-2025 by Jiexian Ma, mjx0799@gmail.com
 % 
 % Project website: https://github.com/mjx888/im2mesh
+%                  https://github.com/mjx888/writeMesh
 %
 
     % format of msh file
@@ -90,11 +91,11 @@ function printMsh( vert, ele, tnum, conn, precision_nodecoor, path_file_name )
     end
 
     if nargin < 5
-        precision_nodecoor = [];
+        precision = [];
     end
 
     if nargin < 6
-        path_file_name = [];
+        file_name = [];
     end
     
     % ---------------------------------------------------------------------
@@ -127,28 +128,28 @@ function printMsh( vert, ele, tnum, conn, precision_nodecoor, path_file_name )
         conn = tria2BoundEdge( ele, tnum );
     end
 
-    if isempty(precision_nodecoor)
-        precision_nodecoor = 8;
+    if isempty(precision)
+        precision = 8;
     end
 
-    if isempty(path_file_name)
+    if isempty(file_name)
         % write to current folder
-        path_file_name = 'test.msh';
+        file_name = 'test.msh';
     end
 
     % ---------------------------------------------------------------------
     % check input type
 
-    % Validate that 'precision_nodecoor' is a positive integer
-    a = precision_nodecoor;
+    % Validate that 'precision' is a positive integer
+    a = precision;
     if ~isnumeric(a) || ~isscalar(a) || a <= 0 || mod(a, 1) ~= 0
-        error('Input "precision_nodecoor" must be a positive integer.');
+        error('Input "precision" must be a positive integer.');
     end
 
-    % Validate that 'path_file_name' is a string
-    b = path_file_name;
+    % Validate that 'file_name' is a string
+    b = file_name;
     if ~(ischar(b) || isstring(b))
-        error('Input "path_file_name" must be a string.');
+        error('Input "file_name" must be a string.');
     end
 
     % ---------------------------------------------------------------------
@@ -162,7 +163,7 @@ function printMsh( vert, ele, tnum, conn, precision_nodecoor, path_file_name )
     % '%.(precision)f'
     
     % format_node_coor
-    fmtNodeCo = [ '%.', num2str( precision_nodecoor ), 'f' ];
+    fmtNodeCo = [ '%.', num2str( precision ), 'f' ];
     
     fmtNodeNum = '%d';  % format_node_num
     fmtEleNum = '%d';   % format_ele_num
@@ -170,7 +171,7 @@ function printMsh( vert, ele, tnum, conn, precision_nodecoor, path_file_name )
     % ---------------------------------------------------------------------
     % start writing to file
     % ---------------------------------------------------------------------
-	fid=fopen(path_file_name,'wW');
+	fid=fopen(file_name,'wW');
     % ---------------------------------------------------------------------
 	% Step1. Heading
     % ---------------------------------------------------------------------
