@@ -116,7 +116,7 @@ function components = findIsolatedMeshRegions( T )
                     % convert to cell array if needed
                     val = {val};
                 end
-                val{end+1} = triIdx; %#ok<AGROW>
+                val{end+1} = triIdx;
                 edgeMap(key) = val;
             end
         end
@@ -177,7 +177,7 @@ function components = findIsolatedMeshRegions( T )
                     if ~visited(nb)
                         visited(nb) = true;
                         components(nb) = currentComp;
-                        stack(end+1) = nb; %#ok<AGROW> % push
+                        stack(end+1) = nb;
                     end
                 end
             end
@@ -324,7 +324,7 @@ function loops = groupBoundaryEdgesIntoLoops(boundaryEdges)
                 for cand = neighbors
                     eIdx = edgeMap(getKey(currentVertex, cand));
                     if ~visitedEdges(eIdx)
-                        unvisitedNext(end+1) = cand; %#ok<AGROW>
+                        unvisitedNext(end+1) = cand;
                     end
                 end
                 
@@ -342,7 +342,7 @@ function loops = groupBoundaryEdgesIntoLoops(boundaryEdges)
                 visitedEdges(nextEdgeIdx) = true;
                 
                 % Add nextVertex to the loop
-                loop(end+1) = nextVertex; %#ok<AGROW>
+                loop(end+1) = nextVertex;
                 
                 % Advance
                 prevVertex = currentVertex;
@@ -355,7 +355,7 @@ function loops = groupBoundaryEdgesIntoLoops(boundaryEdges)
                 end
             end
             
-            loops{end+1} = loop; %#ok<AGROW>
+            loops{end+1} = loop;
         end
     end
 end
@@ -475,55 +475,41 @@ function loopsEdgesInd = createLoopsEdgesInd(loopsEdges, edges)
 %  ASSUMPTION: 1-based indexing for vertices and edges (standard in MATLAB).
 %              If you have 0-based elsewhere, adjust accordingly.
 
-    nLoops = numel(loopsEdges);
+
+    nLoops  = numel(loopsEdges);
     loopsEdgesInd = cell(size(loopsEdges));
-    
-    %---------------------------------
-    % 1) Build a map from "v1-v2" to signed edge index
-    %---------------------------------
-    edgeMap = containers.Map('KeyType','char','ValueType','int32');
-    
-    nEdgesGlobal = size(edges, 1);
-    for k = 1:nEdgesGlobal
-        v1 = edges(k,1);
-        v2 = edges(k,2);
-        
-        % orientation as stored
-        directKey = sprintf('%d-%d', v1, v2);  
-        % reversed orientation
-        revKey    = sprintf('%d-%d', v2, v1);
-        
-        % If someone tries to insert a duplicate key, you'd get an error.
-        % For a well-defined mesh, each edge should appear exactly once in a given orientation.
-        % But to be safe, you might want to check edgeMap.isKey(directKey) etc.
-        
-        edgeMap(directKey) = +k;  % same orientation => +k
-        edgeMap(revKey)    = -k;  % reversed => -k
-    end
-    
-    %---------------------------------
-    % 2) For each loop, build a signed index array
-    %---------------------------------
+
+    % ---------------------------------------------------------------------
+    % Encode every directed edge (v1,v2) as a unique uint64 key:
+    % key = (v1-1)*nVerts + v2
+    % ---------------------------------------------------------------------
+    nVerts = double(max(edges(:)));              % largest vertex id
+    keyfun = @(v1,v2) uint64(v1-1) .* uint64(nVerts) + uint64(v2);
+
+    % Keys for the global edge list (both orientations)
+    keyFwd   = keyfun(edges(:,1), edges(:,2));   % forward  ( +k)
+    keyRev   = keyfun(edges(:,2), edges(:,1));   % reversed ( -k)
+    valsFwd  = int32( (1:size(edges,1)).' );     % +k
+    valsRev  = -valsFwd;                         % -k
+
+    % Concatenate once — a flat lookup table
+    allKeys  = [keyFwd ;  keyRev ];              % 2*Ne x 1   uint64
+    allVals  = [valsFwd;  valsRev];              % 2*Ne x 1   int32
+
+    % ---------------------------------------------------------------------
+    % For each loop, vectorised lookup via ismember (hash‑based, C‑code)
+    % ---------------------------------------------------------------------
     for i = 1:nLoops
-        thisEdges = loopsEdges{i};  % M_i x 2
-        M = size(thisEdges,1);
-        edgeIdxList = zeros(M,1,'int32');  %# for storing signed indices
-        
-        for j = 1:M
-            v1 = thisEdges(j,1);
-            v2 = thisEdges(j,2);
-            
-            key = sprintf('%d-%d', v1, v2);
-            if edgeMap.isKey(key)
-                edgeIdxList(j) = edgeMap(key);
-            else
-                % If we don't find it in the map, then something is off
-                % (edge does not exist in the global 'edges' list).
-                % You could throw an error or store 0 as a sentinel.
-                error('Edge [%d %d] not found in global edges.', v1, v2);
-            end
+        Ei = loopsEdges{i};                      % Mi x 2
+        loopKeys = keyfun(Ei(:,1), Ei(:,2));     % Mi x 1
+
+        [tf, loc] = ismember(loopKeys, allKeys); % loc is Mi x 1
+
+        if any(~tf)
+            error('createLoopsEdgesInd_fast:edgeMissing', ...
+                  'Some edges in loop %d not found in global edge list.', i);
         end
-        
-        loopsEdgesInd{i} = edgeIdxList;  % store as a column vector
+
+        loopsEdgesInd{i} = allVals(loc);         % signed indices, column vector
     end
 end
