@@ -54,6 +54,7 @@ function printMsh( vert, ele, tnum, conn, precision, file_name )
 %  https://doi.org/10.5281/zenodo.14847059
 %
 % Copyright (C) 2019-2025 by Jiexian Ma, mjx0799@gmail.com
+% Distributed under the terms of the GNU General Public License (version 3)
 % 
 % Project website: https://github.com/mjx888/im2mesh
 %                  https://github.com/mjx888/writeMesh
