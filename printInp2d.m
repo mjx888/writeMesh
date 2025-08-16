@@ -68,6 +68,16 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
 %             Exampe:  opt.user_nodeSet{1} = { 'name1', [2 5 8] };
 %                      opt.user_nodeSet{2} = { 'name2', [36 23 56 80] };
 %
+%   opt.mode - Mode of printInp2d. Value: 1, 2, or 3. Default value: 1
+%     When=1, concise mode. Neglect the declaration of Assembly & Instance.
+%             Create a model with one part, which contains multiple sections.
+%             Each section corresponds to one phase in the mesh.
+%     When=2, normal mode. Do not neglect the declaration.
+%             Create a model with one part, which contains multiple sections.
+%     When=3, normal mode. 
+%             Create a model with multiple parts, where each part 
+%             corresponds to one phase in the mesh.
+%
 %
 % This is sub-project of Im2mesh package. If you use this function, please
 % cite as follows: 
@@ -81,21 +91,6 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
 % Project website: https://github.com/mjx888/im2mesh
 %                  https://github.com/mjx888/writeMesh
 %
-
-
-	% format of inp file
-	% ---------------------------------------------------------------------
-	% Heading
-	%
-	% Node
-    %
-    % Element
-    %
-    % Section
-    %
-    % Node set
-    %
-    % ---------------------------------------------------------------------
 
     % ---------------------------------------------------------------------
     % check inputs
@@ -139,6 +134,7 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
     if ~isempty(tnum) && size(tnum,1) ~= size(ele,1)
         error("The 3rd input argument tnum has wrong size.");
     end
+    
     % ---------------------------------------------------------------------
     % If input is empty, assign defaualt value to input
     if isempty(tnum)
@@ -194,8 +190,93 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
 
     % ---------------------------------------------------------------------
     % fix node ordering for elements with negative area
+    % ---------------------------------------------------------------------
     ele = fixOrdering( vert, ele );
     
+    % ---------------------------------------------------------------------
+    % check mode & print inp
+    % ---------------------------------------------------------------------
+    
+    if opt.mode == 1
+        % Concise mode. Neglect the declaration of Assembly & Instance.
+        % Create a model with one part, which contains multiple sections.
+        printMode1( vert, ele, tnum, ele_type, precision, file_name, opt );
+    
+    elseif opt.mode == 2
+        % Normal mode. Do not neglect the declaration of Assembly & Instance.
+        % Create a model with one part, which contains multiple sections.
+        printMode2( vert, ele, tnum, ele_type, precision, file_name, opt );
+    
+    elseif opt.mode == 3
+        % Normal mode.
+        % Create a model with multiple parts, where each part corresponds 
+        % to one phase in the mesh.
+        printMode3( vert, ele, tnum, ele_type, precision, file_name, opt );
+        
+    else
+        error('Input "opt.mode" must be 1, 2, or 3.');
+    end
+    
+    % ---------------------------------------------------------------------
+end
+
+
+function new_opt = setOption( opt )
+% setOption: verify field names in opt and set values in new_opt according
+% to opt
+
+    % initialize new_opt with default field names & value 
+    new_opt.tf_printMaxMinNode = true;
+    new_opt.tf_printInterfNode = true;
+    new_opt.user_nodeSet = {};
+    new_opt.mode = 1;
+    
+    if isempty(opt)
+        return
+    end
+
+    if ~isstruct(opt)
+        error("opt is not a structure array. Not valid input.")
+    end
+    
+    % get the field names of opt
+    nameC = fieldnames(opt);
+
+    % verify field names in opt and set values in new_opt
+    % compare the field name of opt with new_opt using for loop
+    % if a field name of opt exist in new_opt, assign the that field value 
+    % in opt to new_opt
+    % if a field name of opt not exist in new_opt, show error
+
+    for i = 1: length(nameC)
+        if isfield( new_opt, nameC{i} )
+            value = getfield( opt, nameC{i} );
+            new_opt = setfield( new_opt, nameC{i}, value );
+        else
+            error("Field name %s in opt is not correct.", nameC{i});
+        end
+    end
+
+end
+
+
+function printMode1( vert, ele, tnum, ele_type, precision, file_name, opt )
+% printMode1: Mode 1.
+% Concise mode. Neglect the declaration of Assembly & Instance.
+% Create a model with one part, which contains multiple sections.
+    
+	% format of inp file (if opt.mode=1)
+	% ---------------------------------------------------------------------
+	% Heading
+	%
+	% Node
+    % Element
+    % Section
+    %
+    % Node set
+    %
+    % ---------------------------------------------------------------------
+
     % ---------------------------------------------------------------------
     % prepare for writing file
     % ---------------------------------------------------------------------
@@ -203,7 +284,6 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
     % cell array. eleC{i} represent elements in the i-th phase.
     
     [ nodecoor, nodecoorC, eleC ] = getNodeEle( vert, ele, tnum );
-    
     num_phase = length( eleC );
     
     % ---------------------------------------------------------------------
@@ -229,7 +309,7 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
         '**'                                                    '\n'...
         ] ...
         );
-    
+
 	% ---------------------------------------------------------------------
     % Node
     fprintf( fid, '*Node\n' );
@@ -246,13 +326,16 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
         ], ...
         nodecoor' ...
         );
-    
+
+    fprintf( fid, '%s\n', '**' );
+
     % ---------------------------------------------------------------------
     % Element
     
     for i = 1: num_phase
         % example:
         % *Element, type=CPS3, elset=Set-A
+
         fprintf( fid, [...
             '*Element, type=%s, elset=Set-%c'  '\n'...
             ], ele_type, num2char(i) );
@@ -262,10 +345,10 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
         % 87,428,584,561,866,867,868    % quadratic tria element
 
         printEle( fid, eleC{i}, fmEleNum, fmNodeNum );
+
+        fprintf( fid, '%s\n', '**' );
     end
     
-    fprintf( fid, '%s\n', '**' );
-
     % ---------------------------------------------------------------------
     % Section
 
@@ -291,17 +374,17 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
 
     % node set at max & min location
     if opt.tf_printMaxMinNode
-        printNodeSetMaxMin( fid, nodecoor, nodecoorC );
+        printNsMaxMin( fid, nodecoor, nodecoorC );
     end
     
     % node set at the interface
     if opt.tf_printInterfNode
-        printNodeSetInterface( fid, nodecoorC );
+        printNsInterf( fid, nodecoorC );
     end
     
     % print user-defined node set
     if ~isempty( opt.user_nodeSet )
-        printUserNodeSet( fid, opt.user_nodeSet );
+        printUserNs( fid, opt.user_nodeSet );
     end
 
     % ---------------------------------------------------------------------
@@ -310,6 +393,170 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
     % ** Name: BC-FixY Type: Displacement/Rotation
     % *Boundary
     % Set-A-Ymin, 2, 2
+    
+    % ---------------------------------------------------------------------
+    fclose(fid);
+	
+	disp('printInp2d Done! Check the inp file!');
+    % ---------------------------------------------------------------------
+end
+
+
+function printMode2( vert, ele, tnum, ele_type, precision, file_name, opt )
+% printMode2: Mode 2.
+% Normal mode. Do not neglect the declaration.
+% Create a model with one part, which contains multiple sections.
+
+	% format of inp file (if opt.mode=2)
+	% ---------------------------------------------------------------------
+	% Heading
+	%
+    % Part
+	%   Node
+    %   Element
+    %   Section
+    %
+    % Assembly
+    %   Instance
+    %
+    %   Node set
+    %
+    % ---------------------------------------------------------------------
+
+    % ---------------------------------------------------------------------
+    % prepare for writing file
+    % ---------------------------------------------------------------------
+    % Add node numbering and element numbering, and organize elements into 
+    % cell array. eleC{i} represent elements in the i-th phase.
+    
+    [ nodecoor, nodecoorC, eleC ] = getNodeEle( vert, ele, tnum );
+    num_phase = length( eleC );
+    
+    % ---------------------------------------------------------------------
+    % format of number
+
+    % format_node_coor
+    % '%.(precision)f'
+    fmNodeCo = [ '%.', num2str( precision ), 'f' ];    
+    
+    fmNodeNum = '%d';     % format_node_num
+    fmEleNum = '%d';      % format_ele_num
+    
+    % ---------------------------------------------------------------------
+    % start writing to file
+    % ---------------------------------------------------------------------
+	fid=fopen(file_name,'wW');
+    % ---------------------------------------------------------------------
+	% Heading
+    fprintf( fid, [...
+        '*Heading'                                              '\n'...
+        '*Preprint, echo=NO, model=NO, history=NO, contact=NO'  '\n'...
+        '** INP file generated by Im2mesh package'              '\n'...
+        '**'                                                    '\n'...
+        ] ...
+        );
+
+    fprintf( fid, '%s\n', '**' );
+
+	% ---------------------------------------------------------------------
+    fprintf( fid, '%s\n', '*Part, name=Part-1' );
+    
+	% ---------------------------------------------------------------------
+    % Node
+    fprintf( fid, '*Node\n' );
+    
+    % print coordinates of nodes
+    % example:
+    % 3,4.69000000,23.82000000
+    %
+    % '%d,%.4f,%.4f,%.4f\n'
+    
+    fprintf( fid, ...
+        [ ...
+        fmNodeNum, ',', fmNodeCo, ',', fmNodeCo, '\n' ...
+        ], ...
+        nodecoor' ...
+        );
+    
+    fprintf( fid, '%s\n', '**' );
+
+    % ---------------------------------------------------------------------
+    % Element
+    
+    for i = 1: num_phase
+        % example:
+        % *Element, type=CPS3, elset=Set-A
+
+        fprintf( fid, [...
+            '*Element, type=%s, elset=Set-%c'  '\n'...
+            ], ele_type, num2char(i) );
+        
+        % example:
+        % 3,173,400,475     % linear tria element
+        % 87,428,584,561,866,867,868    % quadratic tria element
+
+        printEle( fid, eleC{i}, fmEleNum, fmNodeNum );
+
+        fprintf( fid, '%s\n', '**' );
+    end
+    
+    % ---------------------------------------------------------------------
+    % Section
+
+    for i = 1: num_phase
+        % example:
+        % ** Section: Section-A
+        % *Solid Section, elset=Set-A, material=Material-A
+        % ,
+
+        fprintf( fid, [...
+            '** Section: Section-%c'            '\n'...
+            '*Solid Section, elset=Set-%c, material=Material-%c'  '\n'...
+            ','                                 '\n'...
+            ], ...
+            num2char(i), ...
+            num2char(i), num2char(i) );
+    end
+    
+    fprintf( fid, '%s\n', '**' );
+
+	% ---------------------------------------------------------------------
+    fprintf( fid, '%s\n', '*End Part' );
+    fprintf( fid, '%s\n', '**' );
+    fprintf( fid, '%s\n', '**' );
+
+    % ---------------------------------------------------------------------
+    fprintf( fid, '%s\n', '** ASSEMBLY' );
+    fprintf( fid, '%s\n', '**' );
+    fprintf( fid, '%s\n', '*Assembly, name=Assembly-1' );
+    fprintf( fid, '%s\n', '**' );
+    fprintf( fid, '%s\n', '*Instance, name=Instance-1, part=Part-1' );
+    fprintf( fid, '%s\n', '*End Instance' );
+    fprintf( fid, '%s\n', '**' );
+
+    % ---------------------------------------------------------------------
+    % print node set
+    instanceName = 'Instance-1';
+
+    % node set at max & min location
+    if opt.tf_printMaxMinNode
+        printNsMaxMin( fid, nodecoor, nodecoorC, instanceName );
+    end
+    
+    % node set at the interface
+    if opt.tf_printInterfNode
+        printNsInterf( fid, nodecoorC, instanceName );
+    end
+    
+    % print user-defined node set
+    if ~isempty( opt.user_nodeSet )
+        printUserNs( fid, opt.user_nodeSet, instanceName );
+    end
+
+    % ---------------------------------------------------------------------
+    fprintf( fid, '%s\n', '**' );
+    fprintf( fid, '%s\n', '*End Assembly' );
+    fprintf( fid, '%s\n', '**' );
 
     % ---------------------------------------------------------------------
     fclose(fid);
@@ -319,43 +566,174 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
 end
 
 
-function new_opt = setOption( opt )
-% setOption: verify field names in opt and set values in new_opt according
-% to opt
+function printMode3( vert, ele, tnum, ele_type, precision, file_name, opt )
+% printMode3. Mode 3.
+% Normal mode. Create a model with multiple parts, where each part 
+% corresponds to one phase in the mesh.
 
-    % initialize new_opt with default field names & value 
-    new_opt.tf_printMaxMinNode = true;
-    new_opt.tf_printInterfNode = true;
-    new_opt.user_nodeSet = {};
+	% format of inp file (if opt.mode=3)
+	% ---------------------------------------------------------------------
+	% Heading
+	%
+    % Part-A
+	%   Node
+    %   Element
+    %   Section
+    %
+    % Part-B
+	%   Node
+    %   Element
+    %   Section
+    %
+    % Assembly
+    %   Instance-A
+    %   Instance-B
+    %
+    %   Node set
+    %
+    % ---------------------------------------------------------------------
+
+    % ---------------------------------------------------------------------
+    % prepare for writing file
+    % ---------------------------------------------------------------------
+    % Add node numbering and element numbering, and organize elements into 
+    % cell array. eleC{i} represent elements in the i-th phase.
     
-    if isempty(opt)
-        return
+    [ ~, nodecoorC, eleC ] = getNodeEle( vert, ele, tnum );
+    num_phase = length( eleC );
+    
+    % ---------------------------------------------------------------------
+    % format of number
+
+    % format_node_coor
+    % '%.(precision)f'
+    fmNodeCo = [ '%.', num2str( precision ), 'f' ];    
+    
+    fmNodeNum = '%d';     % format_node_num
+    fmEleNum = '%d';      % format_ele_num
+    
+    % ---------------------------------------------------------------------
+    % start writing to file
+    % ---------------------------------------------------------------------
+	fid=fopen(file_name,'wW');
+    % ---------------------------------------------------------------------
+	% Heading
+    fprintf( fid, [...
+        '*Heading'                                              '\n'...
+        '*Preprint, echo=NO, model=NO, history=NO, contact=NO'  '\n'...
+        '** INP file generated by Im2mesh package'              '\n'...
+        '**'                                                    '\n'...
+        ] ...
+        );
+
+    fprintf( fid, '%s\n', '**' );
+
+    % ---------------------------------------------------------------------
+    for i = 1: num_phase
+        
+	    % -----------------------------------------------------------------
+        fprintf( fid, ['*Part, name=Part-%c' '\n'], num2char(i) );
+        
+	    % -----------------------------------------------------------------
+        % Node
+        fprintf( fid, '*Node\n' );
+        
+        % print coordinates of nodes
+        % example:
+        % 3,4.69000000,23.82000000
+        %
+        % '%d,%.4f,%.4f,%.4f\n'
+        
+        fprintf( fid, ...
+            [ ...
+            fmNodeNum, ',', fmNodeCo, ',', fmNodeCo, '\n' ...
+            ], ...
+            nodecoorC{i}' ...
+            );
+        
+        fprintf( fid, '%s\n', '**' );
+    
+        % -----------------------------------------------------------------
+        % Element
+        
+        % example:
+        % *Element, type=CPS3, elset=Set-A
+
+        fprintf( fid, [...
+            '*Element, type=%s, elset=Set-%c'  '\n'...
+            ], ele_type, num2char(i) );
+        
+        % example:
+        % 3,173,400,475     % linear tria element
+        % 87,428,584,561,866,867,868    % quadratic tria element
+
+        printEle( fid, eleC{i}, fmEleNum, fmNodeNum );
+
+        fprintf( fid, '%s\n', '**' );
+        
+        % -----------------------------------------------------------------
+        % Section
+    
+        % example:
+        % ** Section: Section-A
+        % *Solid Section, elset=Set-A, material=Material-A
+        % ,
+
+        fprintf( fid, [...
+            '** Section: Section-%c'            '\n'...
+            '*Solid Section, elset=Set-%c, material=Material-%c'  '\n'...
+            ','                                 '\n'...
+            ], ...
+            num2char(i), ...
+            num2char(i), num2char(i) );
+        
+        fprintf( fid, '%s\n', '**' );
+    
+	    % -----------------------------------------------------------------
+        fprintf( fid, '%s\n', '*End Part' );
+        fprintf( fid, '%s\n', '**' );
     end
 
-    if ~isstruct(opt)
-        error("opt is not a structure array. Not valid input.")
+    fprintf( fid, '%s\n', '**' );
+
+    % ---------------------------------------------------------------------
+    fprintf( fid, '%s\n', '** ASSEMBLY' );
+    fprintf( fid, '%s\n', '**' );
+    fprintf( fid, '%s\n', '*Assembly, name=Assembly-1' );
+    fprintf( fid, '%s\n', '**' );
+
+    for i = 1: num_phase
+        fprintf( fid, ['*Instance, name=Instance-%c, part=Part-%c', '\n'], ...
+                num2char(i), num2char(i) );
+
+        fprintf( fid, '%s\n', '*End Instance' );
+        fprintf( fid, '%s\n', '**' );
     end
 
-    % get the field names of opt
-    nameC = fieldnames(opt);
+    % ---------------------------------------------------------------------
+    % print node set
 
-    % verify field names in opt and set values in new_opt
-    % compare the field name of opt with new_opt using for loop
-    % if a field name of opt exist in new_opt, assign the that field value 
-    % in opt to new_opt
-    % if a field name of opt not exist in new_opt, show error
-
-    for i = 1: length(nameC)
-        if isfield( new_opt, nameC{i} )
-            value = getfield( opt, nameC{i} );
-            new_opt = setfield( new_opt, nameC{i}, value );
-        else
-            error("Field name %s in opt is not correct.", nameC{i});
-        end
+    % node set at max & min location
+    if opt.tf_printMaxMinNode
+        printNsMaxMinXParts( fid, nodecoorC );
+    end
+    
+    % node set at the interface
+    if opt.tf_printInterfNode
+        printNsInterfXParts( fid, nodecoorC );
     end
 
+    % ---------------------------------------------------------------------
+    fprintf( fid, '%s\n', '**' );
+    fprintf( fid, '%s\n', '*End Assembly' );
+    fprintf( fid, '%s\n', '**' );
+
+    % ---------------------------------------------------------------------
+    fclose(fid);
+	
+	disp('printInp2d Done! Check the inp file!');
+    % ---------------------------------------------------------------------
 end
-
 
 function phase_char = num2char( k )
 % num2char: convert number 1 2 3 to character A B C
@@ -395,33 +773,47 @@ function printSet( fid, nodeSet )
     end
 end
 
-function printNodeSetMaxMin( fid, nodecoor, nodecoorC )
-% printNodeSetMaxMin: print node set at max min location
+function printNsMaxMin( fid, nodecoor, nodecoorC, instanceName )
+% printNsMaxMin: print node set at max min location
+%
+% usage:
+%   printNsMaxMin( fid, nodecoor, nodecoorC );
+%   printNsMaxMin( fid, nodecoor, nodecoorC, instanceName );
 
+    % ---------------------------------------------------------------------
+    if nargin < 4
+        instanceName = [];
+    end
+    
     % ---------------------------------------------------------------------
     % get node set
 
     num_phase = length(nodecoorC);
 
-    [ xmin_node_cell, xmax_node_cell, ...
-      ymin_node_cell, ymax_node_cell ] = getBCNode( nodecoorC );
-    
+    % node set at xmin, xmax, ymin, ymax (globally)
     [ xmin_node, xmax_node, ...
       ymin_node, ymax_node ] = getBCNode( {nodecoor} );
+    
     xmin_node = xmin_node{1};
     xmax_node = xmax_node{1};
     ymin_node = ymin_node{1};
     ymax_node = ymax_node{1};
-    
+
+    % node set at xmin, xmax, ymin, ymax for each phase
+    [ xmin_node_cell, xmax_node_cell, ...
+      ymin_node_cell, ymax_node_cell ] = getBCNode( nodecoorC );
+
     % ---------------------------------------------------------------------
     % node set at xmin, xmax, ymin, ymax (globally)
     % ---------------------------------------------------------------------
     % xmin
     if ~isempty( xmin_node )
-	    fprintf( fid, [...
-		    '*Nset, nset=Set-Xmin'   '\n'...
-		    ] );
-
+        if isempty( instanceName )
+            fprintf( fid, ['*Nset, nset=Set-Xmin' '\n'] );
+        else
+            fprintf( fid, ['*Nset, nset=Set-Xmin, instance=%s' '\n'], instanceName );
+        end
+        
 	    printSet( fid, xmin_node );
     end
 
@@ -429,9 +821,11 @@ function printNodeSetMaxMin( fid, nodecoor, nodecoorC )
     % ---------------------------------------------------------------------
     % xmax
     if ~isempty( xmax_node )
-	    fprintf( fid, [...
-		    '*Nset, nset=Set-Xmax'   '\n'...
-		    ] );
+        if isempty( instanceName )
+            fprintf( fid, ['*Nset, nset=Set-Xmax' '\n'] );
+        else
+            fprintf( fid, ['*Nset, nset=Set-Xmax, instance=%s' '\n'], instanceName );
+        end
 
 	    printSet( fid, xmax_node );
     end
@@ -440,9 +834,11 @@ function printNodeSetMaxMin( fid, nodecoor, nodecoorC )
     % ---------------------------------------------------------------------
     % ymin
     if ~isempty( ymin_node )
-	    fprintf( fid, [...
-		    '*Nset, nset=Set-Ymin'   '\n'...
-		    ] );
+        if isempty( instanceName )
+            fprintf( fid, ['*Nset, nset=Set-Ymin' '\n'] );
+        else
+            fprintf( fid, ['*Nset, nset=Set-Ymin, instance=%s' '\n'], instanceName );
+        end
 
 	    printSet( fid, ymin_node );
     end
@@ -451,9 +847,11 @@ function printNodeSetMaxMin( fid, nodecoor, nodecoorC )
     % ---------------------------------------------------------------------
     % ymax
     if ~isempty( ymax_node )
-	    fprintf( fid, [...
-		    '*Nset, nset=Set-Ymax'   '\n'...
-		    ] );
+        if isempty( instanceName )
+            fprintf( fid, ['*Nset, nset=Set-Ymax' '\n'] );
+        else
+            fprintf( fid, ['*Nset, nset=Set-Ymax, instance=%s' '\n'], instanceName );
+        end
         
 	    printSet( fid, ymax_node );
     end
@@ -463,12 +861,19 @@ function printNodeSetMaxMin( fid, nodecoor, nodecoorC )
     % ---------------------------------------------------------------------
     % node set at xmin, xmax, ymin, ymax for each phase
     % ---------------------------------------------------------------------
+    if num_phase == 1
+        return
+    end
+    % ---------------------------------------------------------------------
     % xmin
     for i = 1: num_phase
 	    if ~isempty( xmin_node_cell{i} )
-		    fprintf( fid, [...
-			    '*Nset, nset=Set-Xmin-%c'   '\n'...
-			    ], num2char(i) );
+            if isempty( instanceName )
+                fprintf( fid, ['*Nset, nset=Set-Xmin-%c' '\n'], num2char(i) );
+            else
+                fprintf( fid, ['*Nset, nset=Set-Xmin-%c, instance=%s' '\n'], ...
+                        num2char(i), instanceName );
+            end
     
 		    printSet( fid, xmin_node_cell{i} );
 	    end
@@ -479,9 +884,12 @@ function printNodeSetMaxMin( fid, nodecoor, nodecoorC )
     % xmax
     for i = 1: num_phase
 	    if ~isempty( xmax_node_cell{i} )
-		    fprintf( fid, [...
-			    '*Nset, nset=Set-Xmax-%c'   '\n'...
-			    ], num2char(i) );
+            if isempty( instanceName )
+                fprintf( fid, ['*Nset, nset=Set-Xmax-%c' '\n'], num2char(i) );
+            else
+                fprintf( fid, ['*Nset, nset=Set-Xmax-%c, instance=%s' '\n'], ...
+                        num2char(i), instanceName );
+            end
     
 		    printSet( fid, xmax_node_cell{i} );
 	    end
@@ -492,9 +900,12 @@ function printNodeSetMaxMin( fid, nodecoor, nodecoorC )
     % ymin
     for i = 1: num_phase
 	    if ~isempty( ymin_node_cell{i} )
-		    fprintf( fid, [...
-			    '*Nset, nset=Set-Ymin-%c'   '\n'...
-			    ], num2char(i) );
+            if isempty( instanceName )
+                fprintf( fid, ['*Nset, nset=Set-Ymin-%c' '\n'], num2char(i) );
+            else
+                fprintf( fid, ['*Nset, nset=Set-Ymin-%c, instance=%s' '\n'], ...
+                        num2char(i), instanceName );
+            end
     
 		    printSet( fid, ymin_node_cell{i} );
 	    end
@@ -505,9 +916,12 @@ function printNodeSetMaxMin( fid, nodecoor, nodecoorC )
     % ymax
     for i = 1: num_phase
 	    if ~isempty( ymax_node_cell{i} )
-		    fprintf( fid, [...
-			    '*Nset, nset=Set-Ymax-%c'   '\n'...
-			    ], num2char(i) );
+            if isempty( instanceName )
+                fprintf( fid, ['*Nset, nset=Set-Ymax-%c' '\n'], num2char(i) );
+            else
+                fprintf( fid, ['*Nset, nset=Set-Ymax-%c, instance=%s' '\n'], ...
+                        num2char(i), instanceName );
+            end
     
 		    printSet( fid, ymax_node_cell{i} );
 	    end
@@ -518,19 +932,33 @@ function printNodeSetMaxMin( fid, nodecoor, nodecoorC )
 end
 
 
-function printNodeSetInterface( fid, nodecoorC )
-% printNodeSetInterface: print node set at the interface
+function printNsInterf( fid, nodecoorC, instanceName )
+% printNsInterf: print node set at the interface
+%
+% usage:
+%   printNsInterf( fid, nodecoorC );
+%   printNsInterf( fid, nodecoorC, instanceName );
 
+    % ---------------------------------------------------------------------
+    if nargin < 3
+        instanceName = [];
+    end
+
+    % ---------------------------------------------------------------------
     num_phase = length(nodecoorC);
     interfnode_cell = getInterf( nodecoorC );
+    % interfnode_cell{i,j} are nodes at interface i,j
 
     for i = 1: num_phase-1
 	    for j = i+1: num_phase
 		    if ~isempty( interfnode_cell{i,j} )
-			    % node at interface i,j
-			    fprintf( fid, [...
-				    '*Nset, nset=Set-Interf-%c%c' '\n'...
-				    ], num2char(i), num2char(j) );
+                if isempty( instanceName )
+                    fprintf( fid, ['*Nset, nset=Set-Interf-%c%c' '\n'], ...
+                            num2char(i), num2char(j) );
+                else
+                    fprintf( fid, ['*Nset, nset=Set-Interf-%c%c, instance=%s' '\n'], ...
+                            num2char(i), num2char(j), instanceName );
+                end
     
 			    printSet( fid, interfnode_cell{i,j} );
 		    end
@@ -538,26 +966,161 @@ function printNodeSetInterface( fid, nodecoorC )
     end
     
     fprintf( fid, '%s\n', '**' );
+    % ---------------------------------------------------------------------
 end
 
-function printUserNodeSet( fid, nodeSet )
-% printUserNodeSet: print user-defined node set
+function printUserNs( fid, nodeSet, instanceName )
+% printUserNs: print user-defined node set
+%
+% usage:
+%   printUserNs( fid, nodeSet )
+%   printUserNs( fid, nodeSet, instanceName );
 
+    % ---------------------------------------------------------------------
+    if nargin < 3
+        instanceName = [];
+    end
+    
+    % ---------------------------------------------------------------------
     num_set = length(nodeSet);
     
     for i = 1: num_set
 	    if ~isempty( nodeSet{i}{1} ) && ~isempty( nodeSet{i}{2} )
-		    fprintf( fid, [...
-			    '*Nset, nset=Set-%s'   '\n'...
-			    ], nodeSet{i}{1} );
+            
+            if isempty( instanceName )
+                fprintf( fid, ['*Nset, nset=Set-%s' '\n'], nodeSet{i}{1} );
+            else
+                fprintf( fid, ['*Nset, nset=Set-%s, instance=%s' '\n'], ...
+                        nodeSet{i}{1}, instanceName );
+            end
     
 		    printSet( fid, nodeSet{i}{2} );
 
             fprintf( fid, '%s\n', '**' );
 	    end
     end
-    
+    % ---------------------------------------------------------------------
 end
+
+function printNsMaxMinXParts( fid, nodecoorC )
+% printNsMaxMinXParts: print node set at max min location for each part
+% Used by function printMode3
+% 
+
+    % ---------------------------------------------------------------------
+    % get node set
+
+    num_phase = length(nodecoorC);
+
+    % node set at xmin, xmax, ymin, ymax for each phase
+    [ xmin_node_cell, xmax_node_cell, ...
+      ymin_node_cell, ymax_node_cell ] = getBCNode( nodecoorC );
+
+    % ---------------------------------------------------------------------
+    % node set at xmin, xmax, ymin, ymax for each phase
+    % ---------------------------------------------------------------------
+    if num_phase == 1
+        return
+    end
+    % ---------------------------------------------------------------------
+    % xmin
+    for i = 1: num_phase
+	    if ~isempty( xmin_node_cell{i} )
+            fprintf( fid, ...
+                    ['*Nset, nset=Set-Xmin-%c, instance=Instance-%c' '\n'], ...
+                    num2char(i), num2char(i) );
+            
+		    printSet( fid, xmin_node_cell{i} );
+	    end
+    end
+
+    fprintf( fid, '%s\n', '**' );
+    % ---------------------------------------------------------------------
+    % xmax
+    for i = 1: num_phase
+	    if ~isempty( xmax_node_cell{i} )
+            fprintf( fid, ...
+                    ['*Nset, nset=Set-Xmax-%c, instance=Instance-%c' '\n'], ...
+                    num2char(i), num2char(i) );
+
+		    printSet( fid, xmax_node_cell{i} );
+	    end
+    end
+    
+    fprintf( fid, '%s\n', '**' );
+    % ---------------------------------------------------------------------
+    % ymin
+    for i = 1: num_phase
+	    if ~isempty( ymin_node_cell{i} )
+            fprintf( fid, ...
+                    ['*Nset, nset=Set-Ymin-%c, instance=Instance-%c' '\n'], ...
+                    num2char(i), num2char(i) );
+    
+		    printSet( fid, ymin_node_cell{i} );
+	    end
+    end
+    
+    fprintf( fid, '%s\n', '**' );
+    % ---------------------------------------------------------------------
+    % ymax
+    for i = 1: num_phase
+	    if ~isempty( ymax_node_cell{i} )
+            fprintf( fid, ...
+                    ['*Nset, nset=Set-Ymax-%c, instance=Instance-%c' '\n'], ...
+                    num2char(i), num2char(i) );
+    
+		    printSet( fid, ymax_node_cell{i} );
+	    end
+    end
+    
+    fprintf( fid, '%s\n', '**' );
+    % ---------------------------------------------------------------------
+end
+
+
+function printNsInterfXParts( fid, nodecoorC )
+% printNsInterfXParts: print node set at the interface for each part
+% Used by function printMode3
+%
+
+    % ---------------------------------------------------------------------
+    num_phase = length(nodecoorC);
+    interfnode_cell = getInterf( nodecoorC );
+    % interfnode_cell{i,j} are nodes in part i at interface i,j
+    % interfnode_cell{j,i} are nodes in part j at interface i,j
+
+    for i = 1: num_phase-1
+	    for j = i+1: num_phase
+		    if ~isempty( interfnode_cell{i,j} )
+                % nodes in part i at interface i,j
+                fprintf( fid, ...
+                    ['*Nset, nset=Set-Interf-%c%c-in-%c, instance=Instance-%c' '\n'], ...
+                        num2char(i), num2char(j), num2char(i), num2char(i) );
+                
+			    printSet( fid, interfnode_cell{i,j} );
+                
+                % nodes in part j at interface i,j
+                fprintf( fid, ...
+                    ['*Nset, nset=Set-Interf-%c%c-in-%c, instance=Instance-%c' '\n'], ...
+                        num2char(i), num2char(j), num2char(j), num2char(j) );
+                
+			    printSet( fid, interfnode_cell{j,i} );
+		    end
+	    end
+    end
+    
+    fprintf( fid, '%s\n', '**' );
+    % ---------------------------------------------------------------------
+end
+
+
+
+
+
+
+
+
+
 
 
 
