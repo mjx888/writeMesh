@@ -1,4 +1,4 @@
-function [ nodecoor_list, nodecoor_cell, ele_cell ] = getNodeEle( vert, tria, tnum, ~ )
+function [ nodecoor_list, nodecoor_cell, ele_cell ] = getNodeEle( vert, tria, tnum )
 % getNodeEle: get node coordinares and elements from mesh
 %
 % Detail: Add node numbering and element numbering, and organize elements 
@@ -48,15 +48,6 @@ function [ nodecoor_list, nodecoor_cell, ele_cell ] = getNodeEle( vert, tria, tn
 % Project website: https://github.com/mjx888/im2mesh
 %
 
-    % check the number of inputs
-    if nargin == 3
-        % normal case
-    elseif nargin == 4
-        warning("the 4th parameter - ele_order is no longer support.")
-    else
-        error('check the number of inputs');
-    end
-    
     nodecoor_list = zeros( size(vert,1), 3 );
     nodecoor_list( :, 1 ) = 1: size(vert,1);
     nodecoor_list( :, 2:3 ) = vert;
@@ -117,7 +108,8 @@ function [ nodecoor_cell, ele_cell ] = whole2phase( vert, tria, tnum )
         %-----------------------------------------------------------------
         nodecoor_cell{i} = nodecoor_pI;
         ele_cell{i} = ele_pI;
-
+        
+        %-----------------------------------------------------------------
     end
 end
 
