@@ -68,7 +68,9 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
 %             Exampe:  opt.user_nodeSet{1} = { 'name1', [2 5 8] };
 %                      opt.user_nodeSet{2} = { 'name2', [36 23 56 80] };
 %
-%   opt.mode - Mode of printInp2d. Value: 1, 2, or 3. Default value: 1
+%   opt.mode - Mode of printInp2d. This parameter is used to configure the 
+%              arrangement of text within the inp file, or its format.
+%              Value: 1, 2, or 3. Default value: 1
 %     When=1, concise mode. Neglect the declaration of Assembly & Instance.
 %             Create a model with one part, which contains multiple sections.
 %             Each section corresponds to one phase in the mesh.
