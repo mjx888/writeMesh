@@ -84,9 +84,10 @@ The usage of other functions is similar.
 
 
 
-# Author
+# Copyright notice
 
-Jiexian Ma
+Copyright (C) by Jiexian Ma
+Distributed under the terms of the GNU General Public License (version 3)
 
 
 
