@@ -1,17 +1,22 @@
 function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
 % printInp2d: write 2d finite element mesh (nodes and elements) to inp 
-%           file (Abaqus). Tested in software Abaqus. 
-%           The exported inp file will have a model with one part, which 
-%           contains multiple sections. Each section corresponds to one 
-%           material phase in the mesh.
+% file (Abaqus). Tested in software Abaqus 6.14. 
 %           
-%           Works for linear and quadratic element.
-%           Works for triangular and quadrilateral element.
-%           Function printInp2d will automatically export node set.
-%           opt.user_nodeSet is used to defined customized node set.
+% Works for mesh with single or multiple phases. Note that phase is also 
+% known as part, domain, or physical surface. In finite element modeling of
+% composite materials, each phase in the mesh represents a distinct 
+% material component.
 %
-%           Use functions: getNodeEle.m  fixOrdering.m  
-%                          getBCNode.m   getInterf.m
+% Works for linear and quadratic element.
+% Works for triangular and quadrilateral element.
+%
+% See the link below for usage examples of function printInp2d.
+%   https://github.com/mjx888/writeMesh/blob/main/README.md
+%   https://mjx888.github.io/writeMesh/demo05.html
+%   https://mjx888.github.io/writeMesh/demo06.html
+%
+% Use functions: getNodeEle.m  fixOrdering.m  
+%                getBCNode.m   getInterf.m
 %
 % usage:
 %   printInp2d( vert, ele );
@@ -71,14 +76,15 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
 %   opt.mode - Mode of printInp2d. This parameter is used to configure the 
 %              arrangement of text within the inp file, or its format.
 %              Value: 1, 2, or 3. Default value: 1
-%     When=1, concise mode. Neglect the declaration of Assembly & Instance.
-%             Create a model with one part, which contains multiple sections.
-%             Each section corresponds to one phase in the mesh.
-%     When=2, normal mode. Do not neglect the declaration.
-%             Create a model with one part, which contains multiple sections.
-%     When=3, normal mode. 
-%             Create a model with multiple parts, where each part 
-%             corresponds to one phase in the mesh.
+%     When =1, the declaration of assembly and instance will be neglected. 
+%             This is the concise format.
+%     When =2, assembly and instance will be declared explicitly (normal 
+%             mode). The exported inp file would have a model with one 
+%             part, which contains multiple sections. Each section 
+%             corresponds to one phase in the mesh. 
+%     When =3, assembly and instance will be declared explicitly (normal 
+%             mode). The exported inp file would have a model with multiple
+%             parts, where each part corresponds to one phase in the mesh.
 %
 %
 % This is sub-project of Im2mesh package. If you use this function, please
@@ -205,12 +211,12 @@ function printInp2d( vert, ele, tnum, ele_type, precision, file_name, opt )
         printMode1( vert, ele, tnum, ele_type, precision, file_name, opt );
     
     elseif opt.mode == 2
-        % Normal mode. Do not neglect the declaration of Assembly & Instance.
+        % Normal mode. Explicitly declare of assembly and instance.
         % Create a model with one part, which contains multiple sections.
         printMode2( vert, ele, tnum, ele_type, precision, file_name, opt );
     
     elseif opt.mode == 3
-        % Normal mode.
+        % Normal mode. Explicitly declare of assembly and instance.
         % Create a model with multiple parts, where each part corresponds 
         % to one phase in the mesh.
         printMode3( vert, ele, tnum, ele_type, precision, file_name, opt );
@@ -406,7 +412,7 @@ end
 
 function printMode2( vert, ele, tnum, ele_type, precision, file_name, opt )
 % printMode2: Mode 2.
-% Normal mode. Do not neglect the declaration.
+% Normal mode. Explicitly declare of assembly and instance.
 % Create a model with one part, which contains multiple sections.
 
 	% format of inp file (if opt.mode=2)
@@ -570,8 +576,9 @@ end
 
 function printMode3( vert, ele, tnum, ele_type, precision, file_name, opt )
 % printMode3. Mode 3.
-% Normal mode. Create a model with multiple parts, where each part 
-% corresponds to one phase in the mesh.
+% Normal mode. Explicitly declare of assembly and instance.
+% Create a model with multiple parts, where each part corresponds to one 
+% phase in the mesh.
 
 	% format of inp file (if opt.mode=3)
 	% ---------------------------------------------------------------------
