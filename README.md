@@ -116,7 +116,7 @@ In the above functions, the 1st and 2nd input arguments are required. The other 
 
 
 
-# Copyright notice
+## Copyright notice
 
 Copyright (C) by Jiexian Ma. 
 
