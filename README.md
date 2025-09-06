@@ -6,7 +6,7 @@
 
 writeMesh supports mesh with single or multiple phases. Note that phase is also known as part, domain, or physical surface. In finite element modeling of composite materials, each phase in the mesh represents a distinct material component.
 
-writeMesh woks for 2D mesh (triangular and quadrilateral); works for 3D mesh (tetrahedral and hexahedral).
+writeMesh woks for 2D mesh (triangular and quadrilateral); also works for 3D mesh (tetrahedral and hexahedral).
 
 
 
