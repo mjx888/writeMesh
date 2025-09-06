@@ -1,5 +1,7 @@
 function [vertU, triaU] = insertNode(vert, tria)
-% insertNode: inserts midpoints into all edges to form quadratic elements.
+% insertNode: inserts midpoints into all edges of linear elements to form 
+% quadratic elements.
+%
 % Works for triangular and quadrilateral element
 %
 %   [vertU, triaU] = insertNode(vert, tria);
@@ -55,13 +57,7 @@ function [vertU, triaU] = insertNodeTria(vert, tria)
     tria_app = [tria, tria(:,1)];  % M-by-4
 
     % -------------------------------------------------------------
-    % 2) Gather *all* midpoints in the same j,k order
-    %    The original loop was:
-    %      for j=1:nT
-    %         for k=1:3
-    %             i1 = tria_app(j,k)
-    %             i2 = tria_app(j,k+1)
-    %             newVert = 0.5*(vert(i1,:) + vert(i2,:))
+    % 2) Gather all midpoints
     % -------------------------------------------------------------
     % Vectorize this by listing the edges in exactly that order:
     i1 = reshape(tria_app(:,1:3)', [], 1);   % 3*nT-by-1
@@ -73,10 +69,6 @@ function [vertU, triaU] = insertNodeTria(vert, tria)
     % -------------------------------------------------------------
     % 3) Combine the original vertices + newly created midpoints
     % -------------------------------------------------------------
-    % In your original code, you appended each midpoint to 'vert'
-    % and then called UNIQUE at the very end. 
-    %
-    % Here we do it in one block:
     V2 = [vert; newCoords];  % (nV + 3*nT)-by-2
 
     % -------------------------------------------------------------
@@ -86,21 +78,13 @@ function [vertU, triaU] = insertNodeTria(vert, tria)
     % -------------------------------------------------------------
     [vertU, ~, ic] = unique(V2, 'stable', 'rows');
     %
-    % Now 'vertU' is exactly the final vertex list your original code would
-    % have produced. The first occurrence of any coordinate is kept, in the
+    % The first occurrence of any coordinate is kept, in the
     % order they appear in V2.
 
     % -------------------------------------------------------------
     % 5) Construct the final 6-node connectivity "triaU"
-    %
     %    The first 3 columns should be the mapped indices of the
     %    original corners.  The next 3 columns are the midpoints.
-    %
-    %    In your old code, you do something like:
-    %      tria(j,4) = index of midpoint on edge(1,2)
-    %      tria(j,5) = index of midpoint on edge(2,3)
-    %      tria(j,6) = index of midpoint on edge(3,1)
-    %
     %    Then you do a stable UNIQUE and update indices with "triaU==i => ic(i)"
     % -------------------------------------------------------------
 
