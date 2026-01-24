@@ -16,6 +16,9 @@ function printInp3d( vert, ele, tnum, ele_type, precision, file_name, opt )
 % Use functions: getNodeEle3d.m
 %                getBCNode3d.m   getInterf3d.m
 %
+% If you encounter error when using printInp3d, please set both
+% opt.tf_printMaxMinNode and opt.tf_printInterfNode as 0.
+%
 % usage:
 %   printInp3d( vert, ele );
 %   printInp3d( vert, ele, [], [], [], file_name );
