@@ -1,5 +1,5 @@
-function plotMeshes3d( vert, ele, tnum, color_code, opt )
-% plotMeshes3d: plot tetrahedral or hexahedral finite element mesh
+function plotMesh3d( vert, ele, tnum, color_code, opt )
+% plotMesh3d: plot tetrahedral or hexahedral finite element mesh
 % Only plot external surfaces of mesh.
 %
 % If the input is a quadractic mesh, it will be treated as a linear mesh.
@@ -7,18 +7,18 @@ function plotMeshes3d( vert, ele, tnum, color_code, opt )
 %
 %
 % usage 1:
-%   plotMeshes3d( vert, ele );        % one phase
-%   plotMeshes3d( vert, ele, tnum );  % multiple phases
+%   plotMesh3d( vert, ele );        % one phase
+%   plotMesh3d( vert, ele, tnum );  % multiple phases
 %
 % usage 2:
-%   plotMeshes3d( vert, ele, [], color_code );    % one phase
-%   plotMeshes3d( vert, ele, tnum, color_code );  % multiple phases
+%   plotMesh3d( vert, ele, [], color_code );    % one phase
+%   plotMesh3d( vert, ele, tnum, color_code );  % multiple phases
 %
 % usage 3:
 %   color_code = 2;
 %   opt = [];   % reset
 %   opt.mode = 1;
-%   plotMeshes3d( vert,ele,tnum, color_code, opt )
+%   plotMesh3d( vert,ele,tnum, color_code, opt )
 %
 % usage 4:
 %   color_code = 2;
@@ -29,7 +29,7 @@ function plotMeshes3d( vert, ele, tnum, color_code, opt )
 %   opt.beta = 0.5;
 %   opt.tf_gs = 0;
 %
-%   plotMeshes3d( vert,ele,tnum, color_code, opt )
+%   plotMesh3d( vert,ele,tnum, color_code, opt )
 %
 % input:
 %   Argument tnum, color_code, and opt are optional.
@@ -55,8 +55,8 @@ function plotMeshes3d( vert, ele, tnum, color_code, opt )
 %			    0: grayscale, 1: lines, 2: parula, 3: turbo, 4: jet, 5: hot
 %			    6: cool, 7: summer, 8: winter, 9: bone, 10: pink.
 %
-%   opt: a structure array. It is the extra options for plotMeshes3d.
-%        It stores extra parameter settings for plotMeshes3d.
+%   opt: a structure array. It is the extra options for plotMesh3d.
+%        It stores extra parameter settings for plotMesh3d.
 %
 %   opt.mode: display mode. Value: 1 or 2.
 % 			  When opt.mode=1, plot faces and edges. Slower.
