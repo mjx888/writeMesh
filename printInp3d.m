@@ -16,6 +16,9 @@ function printInp3d( vert, ele, tnum, ele_type, precision, file_name, opt )
 % Use functions: getNodeEle3d.m
 %                getBCNode3d.m   getInterf3d.m
 %
+% If you encounter error when using printInp3d, please set both
+% opt.tf_printMaxMinNode and opt.tf_printInterfNode as 0.
+%
 % usage:
 %   printInp3d( vert, ele );
 %   printInp3d( vert, ele, [], [], [], file_name );
@@ -300,6 +303,7 @@ function printMode1( vert, ele, tnum, ele_type, precision, file_name, opt )
     
     [ nodecoor, nodecoorC, eleC ] = getNodeEle3d( vert, ele, tnum );
     num_phase = length( eleC );
+    np = num_phase;
     
     % ---------------------------------------------------------------------
     % format of number
@@ -350,8 +354,8 @@ function printMode1( vert, ele, tnum, ele_type, precision, file_name, opt )
         % *Element, type=CPS3, elset=Set-A
 
         fprintf( fid, [...
-            '*Element, type=%s, elset=Set-%c'  '\n'...
-            ], ele_type, num2char(i) );
+            '*Element, type=%s, elset=Set-%s'  '\n'...
+            ], ele_type, num2label(i,np) );
         
         % example:
         % 3,173,400,475
@@ -371,19 +375,19 @@ function printMode1( vert, ele, tnum, ele_type, precision, file_name, opt )
         % ,
 
         fprintf( fid, [...
-            '** Section: Section-%c'            '\n'...
-            '*Solid Section, elset=Set-%c, material=Material-%c'  '\n'...
+            '** Section: Section-%s'            '\n'...
+            '*Solid Section, elset=Set-%s, material=Material-%s'  '\n'...
             ','                                 '\n'...
             ], ...
-            num2char(i), ...
-            num2char(i), num2char(i) );
+            num2label(i,np), ...
+            num2label(i,np), num2label(i,np) );
     end
     
     fprintf( fid, '%s\n', '**' );
     
     % ---------------------------------------------------------------------
     % print node set
-
+    
     % node set at max & min location
     if opt.tf_printMaxMinNode
         printNsMaxMin( fid, nodecoor, nodecoorC, ele, opt.tolerance );
@@ -443,6 +447,7 @@ function printMode2( vert, ele, tnum, ele_type, precision, file_name, opt )
     
     [ nodecoor, nodecoorC, eleC ] = getNodeEle3d( vert, ele, tnum );
     num_phase = length( eleC );
+    np = num_phase;
     
     % ---------------------------------------------------------------------
     % format of number
@@ -498,8 +503,8 @@ function printMode2( vert, ele, tnum, ele_type, precision, file_name, opt )
         % *Element, type=CPS3, elset=Set-A
 
         fprintf( fid, [...
-            '*Element, type=%s, elset=Set-%c'  '\n'...
-            ], ele_type, num2char(i) );
+            '*Element, type=%s, elset=Set-%s'  '\n'...
+            ], ele_type, num2label(i,np) );
         
         % example:
         % 3,173,400,475
@@ -519,12 +524,12 @@ function printMode2( vert, ele, tnum, ele_type, precision, file_name, opt )
         % ,
 
         fprintf( fid, [...
-            '** Section: Section-%c'            '\n'...
-            '*Solid Section, elset=Set-%c, material=Material-%c'  '\n'...
+            '** Section: Section-%s'            '\n'...
+            '*Solid Section, elset=Set-%s, material=Material-%s'  '\n'...
             ','                                 '\n'...
             ], ...
-            num2char(i), ...
-            num2char(i), num2char(i) );
+            num2label(i,np), ...
+            num2label(i,np), num2label(i,np) );
     end
     
     fprintf( fid, '%s\n', '**' );
@@ -611,6 +616,7 @@ function printMode3( vert, ele, tnum, ele_type, precision, file_name, opt )
     
     [ ~, nodecoorC, eleC ] = getNodeEle3d( vert, ele, tnum );
     num_phase = length( eleC );
+    np = num_phase;
     
     % ---------------------------------------------------------------------
     % format of number
@@ -642,7 +648,7 @@ function printMode3( vert, ele, tnum, ele_type, precision, file_name, opt )
     for i = 1: num_phase
         
 	    % -----------------------------------------------------------------
-        fprintf( fid, ['*Part, name=Part-%c' '\n'], num2char(i) );
+        fprintf( fid, ['*Part, name=Part-%s' '\n'], num2label(i,np) );
         
 	    % -----------------------------------------------------------------
         % Node
@@ -668,8 +674,8 @@ function printMode3( vert, ele, tnum, ele_type, precision, file_name, opt )
         % *Element, type=CPS3, elset=Set-A
 
         fprintf( fid, [...
-            '*Element, type=%s, elset=Set-%c'  '\n'...
-            ], ele_type, num2char(i) );
+            '*Element, type=%s, elset=Set-%s'  '\n'...
+            ], ele_type, num2label(i,np) );
         
         % example:
         % 3,173,400,475     % linear tria element
@@ -687,12 +693,12 @@ function printMode3( vert, ele, tnum, ele_type, precision, file_name, opt )
         % ,
 
         fprintf( fid, [...
-            '** Section: Section-%c'            '\n'...
-            '*Solid Section, elset=Set-%c, material=Material-%c'  '\n'...
+            '** Section: Section-%s'            '\n'...
+            '*Solid Section, elset=Set-%s, material=Material-%s'  '\n'...
             ','                                 '\n'...
             ], ...
-            num2char(i), ...
-            num2char(i), num2char(i) );
+            num2label(i,np), ...
+            num2label(i,np), num2label(i,np) );
         
         fprintf( fid, '%s\n', '**' );
     
@@ -710,8 +716,8 @@ function printMode3( vert, ele, tnum, ele_type, precision, file_name, opt )
     fprintf( fid, '%s\n', '**' );
 
     for i = 1: num_phase
-        fprintf( fid, ['*Instance, name=Instance-%c, part=Part-%c', '\n'], ...
-                num2char(i), num2char(i) );
+        fprintf( fid, ['*Instance, name=Instance-%s, part=Part-%s', '\n'], ...
+                num2label(i,np), num2label(i,np) );
 
         fprintf( fid, '%s\n', '*End Instance' );
         fprintf( fid, '%s\n', '**' );
@@ -746,6 +752,31 @@ function phase_char = num2char( k )
 % num2char: convert number 1 2 3 to character A B C
 
     phase_char = char( k-1+65 );     % 'ABCD...'
+end
+
+function phase_label = num2label(k, num_phase)
+% num2label: Converts a phase index to a label based on the total number of phases.
+%
+% Inputs:
+%   k         - The current phase index (1-based)
+%   num_phase - The total number of phases in the set
+%
+% Outputs:
+%   phase_label - A character or string label (e.g., 'A' or 'p001')
+%
+% When num_phase < 27, convert number 1, 2, 3 to characters A, B, C
+% else Convert number 1, 2, 3 to labels "p001", "p002"...
+%
+
+    if num_phase < 27
+        % Method 1: Convert number 1, 2, 3 to characters A, B, C...
+        % 65 is the ASCII value for 'A'
+        phase_label = char( k - 1 + 65 );
+    else
+        % Method 2: Convert number 1, 2, 3 to labels "p001", "p002"...
+        % We use sprintf with %03d to ensure 3 digits with leading zeros
+        phase_label = sprintf( 'p%03d', k );
+    end
 end
 
 function printEle( fid, ele, format_ele_num, format_node_num )
@@ -793,6 +824,7 @@ function printNsMaxMin( fid, nodecoor, nodecoorC, ele, tolerance, instanceName )
     end
     
     num_phase = length(nodecoorC);
+    np = num_phase;
     
     % ---------------------------------------------------------------------
     % remove internal nodes in nodecoor, nodecoorC 
@@ -928,10 +960,10 @@ function printNsMaxMin( fid, nodecoor, nodecoorC, ele, tolerance, instanceName )
     for i = 1: num_phase
 	    if ~isempty( xmin_node_cell{i} )
             if isempty( instanceName )
-                fprintf( fid, ['*Nset, nset=Set-Xmin-%c' '\n'], num2char(i) );
+                fprintf( fid, ['*Nset, nset=Set-Xmin-%s' '\n'], num2label(i,np) );
             else
-                fprintf( fid, ['*Nset, nset=Set-Xmin-%c, instance=%s' '\n'], ...
-                        num2char(i), instanceName );
+                fprintf( fid, ['*Nset, nset=Set-Xmin-%s, instance=%s' '\n'], ...
+                        num2label(i,np), instanceName );
             end
     
 		    printSet( fid, xmin_node_cell{i} );
@@ -944,10 +976,10 @@ function printNsMaxMin( fid, nodecoor, nodecoorC, ele, tolerance, instanceName )
     for i = 1: num_phase
 	    if ~isempty( xmax_node_cell{i} )
             if isempty( instanceName )
-                fprintf( fid, ['*Nset, nset=Set-Xmax-%c' '\n'], num2char(i) );
+                fprintf( fid, ['*Nset, nset=Set-Xmax-%s' '\n'], num2label(i,np) );
             else
-                fprintf( fid, ['*Nset, nset=Set-Xmax-%c, instance=%s' '\n'], ...
-                        num2char(i), instanceName );
+                fprintf( fid, ['*Nset, nset=Set-Xmax-%s, instance=%s' '\n'], ...
+                        num2label(i,np), instanceName );
             end
     
 		    printSet( fid, xmax_node_cell{i} );
@@ -960,10 +992,10 @@ function printNsMaxMin( fid, nodecoor, nodecoorC, ele, tolerance, instanceName )
     for i = 1: num_phase
 	    if ~isempty( ymin_node_cell{i} )
             if isempty( instanceName )
-                fprintf( fid, ['*Nset, nset=Set-Ymin-%c' '\n'], num2char(i) );
+                fprintf( fid, ['*Nset, nset=Set-Ymin-%s' '\n'], num2label(i,np) );
             else
-                fprintf( fid, ['*Nset, nset=Set-Ymin-%c, instance=%s' '\n'], ...
-                        num2char(i), instanceName );
+                fprintf( fid, ['*Nset, nset=Set-Ymin-%s, instance=%s' '\n'], ...
+                        num2label(i,np), instanceName );
             end
     
 		    printSet( fid, ymin_node_cell{i} );
@@ -976,10 +1008,10 @@ function printNsMaxMin( fid, nodecoor, nodecoorC, ele, tolerance, instanceName )
     for i = 1: num_phase
 	    if ~isempty( ymax_node_cell{i} )
             if isempty( instanceName )
-                fprintf( fid, ['*Nset, nset=Set-Ymax-%c' '\n'], num2char(i) );
+                fprintf( fid, ['*Nset, nset=Set-Ymax-%s' '\n'], num2label(i,np) );
             else
-                fprintf( fid, ['*Nset, nset=Set-Ymax-%c, instance=%s' '\n'], ...
-                        num2char(i), instanceName );
+                fprintf( fid, ['*Nset, nset=Set-Ymax-%s, instance=%s' '\n'], ...
+                        num2label(i,np), instanceName );
             end
     
 		    printSet( fid, ymax_node_cell{i} );
@@ -992,10 +1024,10 @@ function printNsMaxMin( fid, nodecoor, nodecoorC, ele, tolerance, instanceName )
     for i = 1: num_phase
 	    if ~isempty( zmin_node_cell{i} )
             if isempty( instanceName )
-                fprintf( fid, ['*Nset, nset=Set-Zmin-%c' '\n'], num2char(i) );
+                fprintf( fid, ['*Nset, nset=Set-Zmin-%s' '\n'], num2label(i,np) );
             else
-                fprintf( fid, ['*Nset, nset=Set-Zmin-%c, instance=%s' '\n'], ...
-                        num2char(i), instanceName );
+                fprintf( fid, ['*Nset, nset=Set-Zmin-%s, instance=%s' '\n'], ...
+                        num2label(i,np), instanceName );
             end
     
 		    printSet( fid, zmin_node_cell{i} );
@@ -1008,10 +1040,10 @@ function printNsMaxMin( fid, nodecoor, nodecoorC, ele, tolerance, instanceName )
     for i = 1: num_phase
 	    if ~isempty( zmax_node_cell{i} )
             if isempty( instanceName )
-                fprintf( fid, ['*Nset, nset=Set-Zmax-%c' '\n'], num2char(i) );
+                fprintf( fid, ['*Nset, nset=Set-Zmax-%s' '\n'], num2label(i,np) );
             else
-                fprintf( fid, ['*Nset, nset=Set-Zmax-%c, instance=%s' '\n'], ...
-                        num2char(i), instanceName );
+                fprintf( fid, ['*Nset, nset=Set-Zmax-%s, instance=%s' '\n'], ...
+                        num2label(i,np), instanceName );
             end
     
 		    printSet( fid, zmax_node_cell{i} );
@@ -1038,6 +1070,7 @@ function printNsInterf( fid, nodecoorC, instanceName )
 
     % ---------------------------------------------------------------------
     num_phase = length(nodecoorC);
+    np = num_phase;
     interfnode_cell = getInterf3d( nodecoorC );
     % interfnode_cell{i,j} are nodes at interface i,j
 
@@ -1045,11 +1078,11 @@ function printNsInterf( fid, nodecoorC, instanceName )
 	    for j = i+1: num_phase
 		    if ~isempty( interfnode_cell{i,j} )
                 if isempty( instanceName )
-                    fprintf( fid, ['*Nset, nset=Set-Interf-%c%c' '\n'], ...
-                            num2char(i), num2char(j) );
+                    fprintf( fid, ['*Nset, nset=Set-Interf-%s%s' '\n'], ...
+                            num2label(i,np), num2label(j,np) );
                 else
-                    fprintf( fid, ['*Nset, nset=Set-Interf-%c%c, instance=%s' '\n'], ...
-                            num2char(i), num2char(j), instanceName );
+                    fprintf( fid, ['*Nset, nset=Set-Interf-%s%s, instance=%s' '\n'], ...
+                            num2label(i,np), num2label(j,np), instanceName );
                 end
     
 			    printSet( fid, interfnode_cell{i,j} );
@@ -1103,6 +1136,7 @@ function printNsMaxMinXParts( fid, nodecoorC, ele, tolerance )
     % remove internal nodes in nodecoorC 
     
     num_phase = length(nodecoorC);
+    np = num_phase;
     surface_node = int32( getSurfaceNode3d(ele) );  % index
     
     for i = 1: num_phase
@@ -1136,8 +1170,8 @@ function printNsMaxMinXParts( fid, nodecoorC, ele, tolerance )
     for i = 1: num_phase
 	    if ~isempty( xmin_node_cell{i} )
             fprintf( fid, ...
-                    ['*Nset, nset=Set-Xmin-%c, instance=Instance-%c' '\n'], ...
-                    num2char(i), num2char(i) );
+                    ['*Nset, nset=Set-Xmin-%s, instance=Instance-%s' '\n'], ...
+                    num2label(i,np), num2label(i,np) );
             
 		    printSet( fid, xmin_node_cell{i} );
 	    end
@@ -1149,8 +1183,8 @@ function printNsMaxMinXParts( fid, nodecoorC, ele, tolerance )
     for i = 1: num_phase
 	    if ~isempty( xmax_node_cell{i} )
             fprintf( fid, ...
-                    ['*Nset, nset=Set-Xmax-%c, instance=Instance-%c' '\n'], ...
-                    num2char(i), num2char(i) );
+                    ['*Nset, nset=Set-Xmax-%s, instance=Instance-%s' '\n'], ...
+                    num2label(i,np), num2label(i,np) );
 
 		    printSet( fid, xmax_node_cell{i} );
 	    end
@@ -1163,8 +1197,8 @@ function printNsMaxMinXParts( fid, nodecoorC, ele, tolerance )
     for i = 1: num_phase
 	    if ~isempty( ymin_node_cell{i} )
             fprintf( fid, ...
-                    ['*Nset, nset=Set-Ymin-%c, instance=Instance-%c' '\n'], ...
-                    num2char(i), num2char(i) );
+                    ['*Nset, nset=Set-Ymin-%s, instance=Instance-%s' '\n'], ...
+                    num2label(i,np), num2label(i,np) );
     
 		    printSet( fid, ymin_node_cell{i} );
 	    end
@@ -1176,8 +1210,8 @@ function printNsMaxMinXParts( fid, nodecoorC, ele, tolerance )
     for i = 1: num_phase
 	    if ~isempty( ymax_node_cell{i} )
             fprintf( fid, ...
-                    ['*Nset, nset=Set-Ymax-%c, instance=Instance-%c' '\n'], ...
-                    num2char(i), num2char(i) );
+                    ['*Nset, nset=Set-Ymax-%s, instance=Instance-%s' '\n'], ...
+                    num2label(i,np), num2label(i,np) );
     
 		    printSet( fid, ymax_node_cell{i} );
 	    end
@@ -1190,8 +1224,8 @@ function printNsMaxMinXParts( fid, nodecoorC, ele, tolerance )
     for i = 1: num_phase
 	    if ~isempty( zmin_node_cell{i} )
             fprintf( fid, ...
-                    ['*Nset, nset=Set-Zmin-%c, instance=Instance-%c' '\n'], ...
-                    num2char(i), num2char(i) );
+                    ['*Nset, nset=Set-Zmin-%s, instance=Instance-%s' '\n'], ...
+                    num2label(i,np), num2label(i,np) );
     
 		    printSet( fid, zmin_node_cell{i} );
 	    end
@@ -1203,8 +1237,8 @@ function printNsMaxMinXParts( fid, nodecoorC, ele, tolerance )
     for i = 1: num_phase
 	    if ~isempty( zmax_node_cell{i} )
             fprintf( fid, ...
-                    ['*Nset, nset=Set-Zmax-%c, instance=Instance-%c' '\n'], ...
-                    num2char(i), num2char(i) );
+                    ['*Nset, nset=Set-Zmax-%s, instance=Instance-%s' '\n'], ...
+                    num2label(i,np), num2label(i,np) );
     
 		    printSet( fid, zmax_node_cell{i} );
 	    end
@@ -1222,6 +1256,7 @@ function printNsInterfXParts( fid, nodecoorC )
 
     % ---------------------------------------------------------------------
     num_phase = length(nodecoorC);
+    np = num_phase;
     interfnode_cell = getInterf3d( nodecoorC );
     % interfnode_cell{i,j} are nodes in part i at interface i,j
     % interfnode_cell{j,i} are nodes in part j at interface i,j
@@ -1231,15 +1266,15 @@ function printNsInterfXParts( fid, nodecoorC )
 		    if ~isempty( interfnode_cell{i,j} )
                 % nodes in part i at interface i,j
                 fprintf( fid, ...
-                    ['*Nset, nset=Set-Interf-%c%c-in-%c, instance=Instance-%c' '\n'], ...
-                        num2char(i), num2char(j), num2char(i), num2char(i) );
+                    ['*Nset, nset=Set-Interf-%s%s-in-%s, instance=Instance-%s' '\n'], ...
+                        num2label(i,np), num2label(j,np), num2label(i,np), num2label(i,np) );
                 
 			    printSet( fid, interfnode_cell{i,j} );
                 
                 % nodes in part j at interface i,j
                 fprintf( fid, ...
-                    ['*Nset, nset=Set-Interf-%c%c-in-%c, instance=Instance-%c' '\n'], ...
-                        num2char(i), num2char(j), num2char(j), num2char(j) );
+                    ['*Nset, nset=Set-Interf-%s%s-in-%s, instance=Instance-%s' '\n'], ...
+                        num2label(i,np), num2label(j,np), num2label(j,np), num2label(j,np) );
                 
 			    printSet( fid, interfnode_cell{j,i} );
 		    end
