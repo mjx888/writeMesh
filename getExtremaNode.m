@@ -28,15 +28,32 @@ function node_cell = getExtremaNode( nodecoor_cell, xyzchar, fHandle, tolerance 
 
     % --------------------------------------------------------------------
     % find global extrema
+    % --------------------------------------------------------------------
     num_phase = length( nodecoor_cell );
-    extrema_vec = zeros( 1, num_phase );
+    
+    % Pre-allocate with NaN to act as a placeholder
+    extrema_vec = nan( 1, num_phase ); 
+    
     for i = 1: num_phase
-        extrema_vec(i) = fHandle( nodecoor_cell{i}(:,idx) );
+        % Only process if the cell is not empty
+        if ~isempty( nodecoor_cell{i} )
+            extrema_vec(i) = fHandle( nodecoor_cell{i}(:,idx) );
+        end
     end
-    extrema = fHandle( extrema_vec );
+    
+    % Remove NaNs (which represent empty cells) from the vector
+    extrema_vec = extrema_vec( ~isnan(extrema_vec) );
+    
+    % Check if we have any data left to avoid errors in the final call
+    if isempty(extrema_vec)
+        error('Not able to find extrema.')
+    else
+        extrema = fHandle( extrema_vec );
+    end
     
     % --------------------------------------------------------------------
     % find node index for extrema
+    % --------------------------------------------------------------------
     node_cell = cell( 1, num_phase );
     
     for i = 1: num_phase
