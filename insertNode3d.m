@@ -75,7 +75,7 @@ function [vertU, eleU] = insertNodeTet(vert, ele)
     %    which unique index it corresponds to in vertU.
     % -------------------------------------------------------------
     [vertU, ~, ic] = unique(V2, 'stable', 'rows');
-    
+    ic = convert2uint( ic );
     % The first occurrence of any coordinate is kept, in the
     % order they appear in V2.
 
@@ -117,39 +117,39 @@ function [vertU, eleU] = insertNodeHex(vert, ele)
     
     % Compute all midpoints in a single shot (still in the same order)
     newCoords = 0.5* (vert(i1, :) + vert(i2, :));  % 12*nE-by-3
-
+    
     % -------------------------------------------------------------
     % 2) Combine the original vertices + newly created midpoints
     % -------------------------------------------------------------
     V2 = [vert; newCoords];  % (nV + 12*nE)-by-3
-
+    
     % -------------------------------------------------------------
     % 3) Remove duplicates with "stable" to replicate original order
     %    The output 'ic' tells us, for each row in V2,
     %    which unique index it corresponds to in vertU.
     % -------------------------------------------------------------
     [vertU, ~, ic] = unique(V2, 'stable', 'rows');
-    
+    ic = convert2uint( ic );
     % The first occurrence of any coordinate is kept, in the
     % order they appear in V2.
-
+    
     % -------------------------------------------------------------
     % 4) Construct the final 20-node connectivity "eleU"
     %    The first 8 columns should be the mapped indices of the
     %    original corners.  The next 12 columns are the midpoints.
     %    Then do a stable UNIQUE and update indices with "eleU==i => ic(i)"
     % -------------------------------------------------------------
-
+    
     % Vector-map the original corners:
     %  If ele is nE-by-8, then ic(ele) is also nE-by-8.
     cornerMapped = ic(ele);  % each corner i => ic(i)
-
+    
     % Vector-map the midpoints:
     %   The last 12*nE rows in V2 are the newly created midpoints,
     %   and their final indices in vertU are ic(nV+1 : nV+12*nE).
     %   We reshape them by 12 per element.
     midMapped = reshape(ic(nV+1:end), 12, nE).';  % nE-by-12
-
+    
     % Combine corners + midpoints
     eleU = [cornerMapped, midMapped];
 end
